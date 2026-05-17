@@ -582,10 +582,13 @@ function addViewerLighting(scene) {
   rimLight.position.set(-5.4, 2.8, -5.2);
   scene.add(rimLight);
 
-  // Front light — directly illuminates the blade face toward the camera
-  const bladeFront = new THREE.DirectionalLight(0xdce8ec, 2.2);
-  bladeFront.position.set(0.6, 1.0, 6.0);
+  // Front light — SpotLight aimed directly at the sword centre so it does not
+  // graze the floor at a shallow angle and create a large bright arc via bloom.
+  const bladeFront = new THREE.SpotLight(0xdce8ec, 2.2, 22, Math.PI * 0.18, 0.35, 1.2);
+  bladeFront.position.set(0.6, 1.8, 6.0);
+  bladeFront.target.position.set(0, 0.5, 0);
   scene.add(bladeFront);
+  scene.add(bladeFront.target);
 
   // Edge strip lights — create glinting highlights along the metallic sides of the blade
   const edgeLeft = new THREE.DirectionalLight(0xb0d4e8, 1.8);
@@ -885,35 +888,52 @@ function enhanceMaterial(material) {
 
   const enhanced = material.clone();
   const name = (enhanced.name || "").toLowerCase();
-  let profile = getMaterialProfile(name);
-  const isNearWhite = enhanced.color && enhanced.color.r > 0.86 && enhanced.color.g > 0.86 && enhanced.color.b > 0.86;
+  const profile = getMaterialProfile(name);
 
-  if (isNearWhite && !profile.preserveBright) {
-    profile = {
-      ...profile,
-      color: profile.color ?? 0xa9a49a,
-      metalness: typeof profile.metalness === "number" ? profile.metalness : 0.72,
-      roughness: typeof profile.roughness === "number" ? Math.max(profile.roughness, 0.34) : 0.42,
-      envMapIntensity: Math.min(profile.envMapIntensity ?? 1.2, 1.8)
-    };
+  // Detect which PBR channels have embedded texture maps from the GLB
+  const hasColorMap    = Boolean(enhanced.map);
+  const hasMetalMap    = Boolean(enhanced.metalnessMap);
+  const hasRoughMap    = Boolean(enhanced.roughnessMap);
+
+  // ── Colour ───────────────────────────────────────────────────────────────
+  // When an albedo texture is embedded, the base-colour factor must stay white
+  // (1,1,1) so the texture renders at full fidelity. Tinting a dark texture
+  // with a dark colour makes it even darker → black blade.
+  // Only override colour when there is NO embedded colour texture.
+  if (profile.color && enhanced.color && !hasColorMap) {
+    enhanced.color.setHex(profile.color);
   }
 
-  if (profile.color && enhanced.color) {
-    const hasTexture = Boolean(enhanced.map);
-
-    if (!hasTexture || profile.tintTextured || isNearWhite) {
-      enhanced.color.setHex(profile.color);
+  // ── Metalness ────────────────────────────────────────────────────────────
+  // If the GLB has a metalness map, the factor of 1.0 means "use the map
+  // at full strength". Overriding the factor would scale down the texture.
+  // When NO map is present, apply the profile value outright.
+  if ("metalness" in enhanced) {
+    if (hasMetalMap) {
+      // Keep factor = 1.0 so the texture drives metalness fully.
+      // Nothing to change – leave as exported.
+    } else if (typeof profile.metalness === "number") {
+      enhanced.metalness = profile.metalness;
     }
   }
 
-  if ("metalness" in enhanced && typeof profile.metalness === "number") {
-    enhanced.metalness = profile.metalness;
+  // ── Roughness ────────────────────────────────────────────────────────────
+  // Same logic: if there is a roughnessMap, trust it.
+  // If not, apply the profile roughness (and optionally a synthetic noise map).
+  if ("roughness" in enhanced) {
+    if (hasRoughMap) {
+      // Trust the embedded texture. Keep factor = 1.0.
+    } else {
+      if (typeof profile.roughness === "number") {
+        enhanced.roughness = profile.roughness;
+      }
+      if (profile.useRoughnessNoise) {
+        enhanced.roughnessMap = getMetalRoughnessTexture();
+      }
+    }
   }
 
-  if ("roughness" in enhanced && typeof profile.roughness === "number") {
-    enhanced.roughness = profile.roughness;
-  }
-
+  // ── Clearcoat / specular extras ──────────────────────────────────────────
   if ("clearcoat" in enhanced && typeof profile.clearcoat === "number") {
     enhanced.clearcoat = profile.clearcoat;
   }
@@ -930,24 +950,22 @@ function enhanceMaterial(material) {
     enhanced.ior = profile.ior;
   }
 
-  if (profile.useRoughnessNoise && "roughnessMap" in enhanced && !enhanced.roughnessMap) {
-    enhanced.roughnessMap = getMetalRoughnessTexture();
-  }
-
   if (enhanced.normalMap && enhanced.normalScale && typeof profile.normalScale === "number") {
     enhanced.normalScale.setScalar(profile.normalScale);
   }
 
+  // Ensure embedded colour textures are tagged with the correct colour space
   if (enhanced.map) {
     enhanced.map.colorSpace = THREE.SRGBColorSpace;
   }
 
-  enhanced.envMapIntensity = profile.envMapIntensity;
+  // envMapIntensity is a factor on top of the IBL – always apply
+  enhanced.envMapIntensity = profile.envMapIntensity ?? 1.2;
 
-  // Safety net: any material still very dark AND highly metallic after all profiles
-  // will render near-black in a dark scene — force a visible steel base colour.
-  // Threshold raised to 0.22 to catch all practically-dark metallic materials.
-  if ("metalness" in enhanced && "color" in enhanced) {
+  // Safety net: any NON-TEXTURED material that is still very dark AND highly metallic
+  // after all profile overrides will render near-black in a dark scene.
+  // Skip this for texture-driven materials — their appearance is controlled by their maps.
+  if ("metalness" in enhanced && "color" in enhanced && !hasColorMap && !hasMetalMap) {
     const luma = 0.2126 * enhanced.color.r + 0.7152 * enhanced.color.g + 0.0722 * enhanced.color.b;
     if (enhanced.metalness > 0.55 && luma < 0.22) {
       enhanced.color.setHex(0x606866);
