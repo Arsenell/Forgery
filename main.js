@@ -637,9 +637,10 @@ function addViewerStage(scene) {
   scene.add(floor);
 
   const stoneMaterial = new THREE.MeshStandardMaterial({
-    color: 0x141718,
-    metalness: 0.03,
-    roughness: 0.88
+    color: 0x050607,
+    metalness: 0.0,
+    roughness: 0.98,
+    envMapIntensity: 0.0
   });
   const plinthBase = new THREE.Mesh(new THREE.CylinderGeometry(1.54, 1.78, 0.24, 128), stoneMaterial);
   plinthBase.position.y = -1.66;
@@ -649,7 +650,7 @@ function addViewerStage(scene) {
 
   const plinth = new THREE.Mesh(
     new THREE.CylinderGeometry(1.04, 1.28, 0.32, 128),
-    new THREE.MeshStandardMaterial({ color: 0x1e2222, metalness: 0.06, roughness: 0.72 })
+    new THREE.MeshStandardMaterial({ color: 0x080909, metalness: 0.0, roughness: 0.98, envMapIntensity: 0.0 })
   );
   plinth.position.y = -1.43;
   plinth.receiveShadow = true;
@@ -658,7 +659,7 @@ function addViewerStage(scene) {
 
   const plinthTop = new THREE.Mesh(
     new THREE.CylinderGeometry(0.88, 1.02, 0.08, 128),
-    new THREE.MeshStandardMaterial({ color: 0x2c302e, metalness: 0.14, roughness: 0.58, envMapIntensity: 0.28 })
+    new THREE.MeshStandardMaterial({ color: 0x0c100e, metalness: 0.02, roughness: 0.96, envMapIntensity: 0.0 })
   );
   plinthTop.position.y = -1.22;
   plinthTop.receiveShadow = true;
