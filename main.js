@@ -699,7 +699,7 @@ function addViewerStage(scene) {
   const fogMaterial = new THREE.MeshBasicMaterial({
     color: 0x9fbfc6,
     transparent: true,
-    opacity: 0.045,
+    opacity: 0.018,
     alphaMap: createRadialGradientTexture("fog"),
     depthWrite: false,
     blending: THREE.AdditiveBlending
@@ -743,7 +743,7 @@ function addAtmosphereVeils(scene) {
   const material = new THREE.MeshBasicMaterial({
     color: 0x7fa5ac,
     transparent: true,
-    opacity: 0.055,
+    opacity: 0.018,
     alphaMap: texture,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
