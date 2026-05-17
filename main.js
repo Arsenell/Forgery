@@ -100,45 +100,54 @@ const SWORDS = [
 const LIGHT_RIGS = {
   material: {
     label: "Material",
-    exposure: 0.85,
+    exposure: 0.92,
     bloom: 0.1,
-    ambient: 0.1,
-    hemi: 0.38,
-    key: 2.45,
-    fill: 0.42,
-    rim: 2.85,
+    ambient: 0.18,
+    hemi: 0.52,
+    key: 3.2,
+    fill: 0.72,
+    rim: 3.4,
     ember: 0.85,
-    head: 0.18,
+    head: 0.28,
+    bladeFront: 2.2,
+    edgeLeft: 1.8,
+    edgeRight: 1.8,
     keyColor: 0xffedd2,
     fillColor: 0x6f9fac,
     rimColor: 0xb8ecf2
   },
   forge: {
     label: "Forge",
-    exposure: 0.8,
+    exposure: 0.88,
     bloom: 0.16,
-    ambient: 0.08,
-    hemi: 0.28,
-    key: 1.7,
-    fill: 0.24,
-    rim: 2.95,
+    ambient: 0.12,
+    hemi: 0.38,
+    key: 2.4,
+    fill: 0.42,
+    rim: 3.5,
     ember: 1.95,
-    head: 0.14,
+    head: 0.22,
+    bladeFront: 1.8,
+    edgeLeft: 1.5,
+    edgeRight: 1.5,
     keyColor: 0xffead0,
     fillColor: 0x5f8792,
     rimColor: 0x9fced8
   },
   studio: {
     label: "Studio",
-    exposure: 0.92,
+    exposure: 1.0,
     bloom: 0.06,
-    ambient: 0.16,
-    hemi: 0.5,
-    key: 1.9,
-    fill: 0.64,
-    rim: 1.95,
+    ambient: 0.24,
+    hemi: 0.64,
+    key: 2.6,
+    fill: 0.9,
+    rim: 2.5,
     ember: 0.18,
-    head: 0.2,
+    head: 0.32,
+    bladeFront: 2.8,
+    edgeLeft: 2.2,
+    edgeRight: 2.2,
     keyColor: 0xffffff,
     fillColor: 0xb9d4d8,
     rimColor: 0xc6d4d8
@@ -530,14 +539,14 @@ function loadHDREnvironment() {
 
       viewerState.environmentTexture = viewerState.pmrem.fromEquirectangular(hdrTexture).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
-      viewerState.scene.environmentIntensity = 0.92;
+      viewerState.scene.environmentIntensity = 1.55;
       hdrTexture.dispose();
     },
     undefined,
     () => {
       viewerState.environmentTexture = viewerState.pmrem.fromScene(new RoomEnvironment(), 0.02).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
-      viewerState.scene.environmentIntensity = 0.72;
+      viewerState.scene.environmentIntensity = 1.15;
     }
   );
 }
@@ -549,8 +558,9 @@ function addViewerLighting(scene) {
   const hemisphere = new THREE.HemisphereLight(0x9fb5bb, 0x0b0705, 0.38);
   scene.add(hemisphere);
 
-  const keyLight = new THREE.DirectionalLight(0xffedd2, 2.45);
-  keyLight.position.set(3.4, 5.6, 3.2);
+  // Key light repositioned to a 3/4 front angle so it hits the blade face
+  const keyLight = new THREE.DirectionalLight(0xffedd2, 3.2);
+  keyLight.position.set(2.5, 4.0, 5.5);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(2048, 2048);
   keyLight.shadow.camera.near = 0.2;
@@ -572,8 +582,22 @@ function addViewerLighting(scene) {
   rimLight.position.set(-5.4, 2.8, -5.2);
   scene.add(rimLight);
 
-  const bladeKick = new THREE.PointLight(0xf6f0df, 0.46, 4.5, 2.4);
-  bladeKick.position.set(1.25, 0.55, 1.05);
+  // Front light — directly illuminates the blade face toward the camera
+  const bladeFront = new THREE.DirectionalLight(0xdce8ec, 2.2);
+  bladeFront.position.set(0.6, 1.0, 6.0);
+  scene.add(bladeFront);
+
+  // Edge strip lights — create glinting highlights along the metallic sides of the blade
+  const edgeLeft = new THREE.DirectionalLight(0xb0d4e8, 1.8);
+  edgeLeft.position.set(-5.5, 2.0, 1.5);
+  scene.add(edgeLeft);
+
+  const edgeRight = new THREE.DirectionalLight(0xd8eaee, 1.8);
+  edgeRight.position.set(5.5, 2.0, 1.5);
+  scene.add(edgeRight);
+
+  const bladeKick = new THREE.PointLight(0xf0f4f8, 1.2, 5.5, 1.8);
+  bladeKick.position.set(0.8, 0.8, 3.5);
   scene.add(bladeKick);
 
   const emberLight = new THREE.PointLight(0xd1843e, 0.85, 7.5, 2.2);
@@ -588,7 +612,7 @@ function addViewerLighting(scene) {
   headLight.position.copy(viewerState.camera.position);
   scene.add(headLight);
 
-  viewerState.lights = { ambient, hemisphere, keyLight, fillLight, rimLight, bladeKick, emberLight, underGlow, headLight };
+  viewerState.lights = { ambient, hemisphere, keyLight, fillLight, rimLight, bladeFront, edgeLeft, edgeRight, bladeKick, emberLight, underGlow, headLight };
 }
 
 function addViewerStage(scene) {
@@ -866,7 +890,7 @@ function enhanceMaterial(material) {
       color: profile.color ?? 0xa9a49a,
       metalness: typeof profile.metalness === "number" ? profile.metalness : 0.72,
       roughness: typeof profile.roughness === "number" ? Math.max(profile.roughness, 0.34) : 0.42,
-      envMapIntensity: Math.min(profile.envMapIntensity ?? 0.8, 0.85)
+      envMapIntensity: Math.min(profile.envMapIntensity ?? 1.2, 1.8)
     };
   }
 
@@ -1276,7 +1300,10 @@ function applyLightingRig(id) {
     viewerState.lights.fillLight.color.setHex(rig.fillColor);
     viewerState.lights.rimLight.intensity = rig.rim;
     viewerState.lights.rimLight.color.setHex(rig.rimColor);
-    viewerState.lights.bladeKick.intensity = Math.max(0.18, rig.key * 0.18);
+    viewerState.lights.bladeKick.intensity = Math.max(0.35, rig.key * 0.22);
+    viewerState.lights.bladeFront.intensity = rig.bladeFront ?? 2.2;
+    viewerState.lights.edgeLeft.intensity = rig.edgeLeft ?? 1.8;
+    viewerState.lights.edgeRight.intensity = rig.edgeRight ?? 1.8;
     viewerState.lights.emberLight.intensity = rig.ember;
     viewerState.lights.emberLight.userData.baseIntensity = rig.ember;
     viewerState.lights.underGlow.intensity = rig.ember * 0.42;
@@ -1291,7 +1318,7 @@ function applyLightingRig(id) {
 }
 
 function setExposure(value) {
-  const exposure = THREE.MathUtils.clamp(value, 0.68, 1.15);
+  const exposure = THREE.MathUtils.clamp(value, 0.68, 1.35);
 
   if (viewerState.renderer) {
     viewerState.renderer.toneMappingExposure = exposure;
