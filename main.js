@@ -9,7 +9,7 @@ import { ShaderPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/
 import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/OutputPass.js";
 
-const HDR_ENVIRONMENT_URL = "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/textures/equirectangular/venice_sunset_1k.hdr";
+const HDR_ENVIRONMENT_URL = "./hdr/venice_sunset_1k.hdr";
 
 const CinematicGradeShader = {
   uniforms: {
