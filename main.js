@@ -511,7 +511,7 @@ function initViewer() {
 
   viewerState.composer = new EffectComposer(viewerState.renderer);
   viewerState.composer.addPass(new RenderPass(viewerState.scene, viewerState.camera));
-  viewerState.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), LIGHT_RIGS.material.bloom, 0.32, 0.9);
+  viewerState.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), LIGHT_RIGS.material.bloom, 0.12, 0.92);
   viewerState.composer.addPass(viewerState.bloomPass);
   viewerState.gradePass = new ShaderPass(CinematicGradeShader);
   viewerState.composer.addPass(viewerState.gradePass);
@@ -590,13 +590,14 @@ function addViewerLighting(scene) {
   scene.add(bladeFront);
   scene.add(bladeFront.target);
 
-  // Edge strip lights — create glinting highlights along the metallic sides of the blade
-  const edgeLeft = new THREE.DirectionalLight(0xb0d4e8, 1.8);
-  edgeLeft.position.set(-5.5, 2.0, 1.5);
+  // Edge strip lights — PointLights positioned to the sides so intensity
+  // falls off before reaching the floor (avoids grazing bloom arcs)
+  const edgeLeft = new THREE.PointLight(0xb0d4e8, 8.0, 8.0, 2.0);
+  edgeLeft.position.set(-5.0, 1.8, 0.5);
   scene.add(edgeLeft);
 
-  const edgeRight = new THREE.DirectionalLight(0xd8eaee, 1.8);
-  edgeRight.position.set(5.5, 2.0, 1.5);
+  const edgeRight = new THREE.PointLight(0xd8eaee, 8.0, 8.0, 2.0);
+  edgeRight.position.set(5.0, 1.8, 0.5);
   scene.add(edgeRight);
 
   const bladeKick = new THREE.PointLight(0xf0f4f8, 1.2, 5.5, 1.8);
@@ -623,8 +624,8 @@ function addViewerStage(scene) {
     color: 0x0d1416,
     metalness: 0.2,
     roughness: 0.34,
-    clearcoat: 0.62,
-    clearcoatRoughness: 0.58,
+    clearcoat: 0.08,
+    clearcoatRoughness: 0.72,
     envMapIntensity: 0.46,
     transparent: true,
     opacity: 0.88
