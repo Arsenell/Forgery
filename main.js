@@ -55,7 +55,7 @@ const CinematicGradeShader = {
 const SWORDS = [
   {
     id: "sword1",
-    name: "Silverthorn Rapier",
+    name: "Rapier",
     shortName: "Rapier",
     model: "./models/sword1.glb",
     rarity: "Mythic",
@@ -69,7 +69,7 @@ const SWORDS = [
   },
   {
     id: "sword2",
-    name: "Ashguard Short Sword",
+    name: "Short Sword",
     shortName: "Short Sword",
     model: "./models/sword2.glb",
     rarity: "Rare",
@@ -83,7 +83,7 @@ const SWORDS = [
   },
   {
     id: "sword3",
-    name: "Gravetide Zweihander",
+    name: "Zweihander",
     shortName: "Zweihander",
     model: "./models/sword3.glb",
     rarity: "Legendary",
@@ -94,6 +94,20 @@ const SWORDS = [
     targetSize: 3.45,
     previewSize: 3.05,
     fullViewDistance: 9.25
+  },
+  {
+    id: "sword4",
+    name: "Greatsword",
+    shortName: "Greatsword",
+    model: "./models/sword4.glb",
+    rarity: "Epic",
+    lore: "A colossal two-handed blade forged for conquest — its broad fuller catches every light as the edge cleaves the air.",
+    origin: "Iron highlands",
+    material: "Tempered iron",
+    camera: [3.8, 1.4, 7.5],
+    targetSize: 3.6,
+    previewSize: 3.2,
+    fullViewDistance: 9.5
   }
 ];
 

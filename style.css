@@ -394,6 +394,11 @@ a {
   background: rgba(238, 242, 243, 0.1);
 }
 
+.rarity-epic {
+  color: #d4aaff;
+  background: rgba(160, 80, 255, 0.12);
+}
+
 .btn-card-action {
   width: 100%;
   color: var(--silver);
