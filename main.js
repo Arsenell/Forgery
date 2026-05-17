@@ -592,11 +592,11 @@ function addViewerLighting(scene) {
 
   // Edge strip lights — PointLights positioned to the sides so intensity
   // falls off before reaching the floor (avoids grazing bloom arcs)
-  const edgeLeft = new THREE.PointLight(0xb0d4e8, 8.0, 8.0, 2.0);
+  const edgeLeft = new THREE.PointLight(0xb0d4e8, 4.5, 5.0, 2.0);
   edgeLeft.position.set(-5.0, 1.8, 0.5);
   scene.add(edgeLeft);
 
-  const edgeRight = new THREE.PointLight(0xd8eaee, 8.0, 8.0, 2.0);
+  const edgeRight = new THREE.PointLight(0xd8eaee, 4.5, 5.0, 2.0);
   edgeRight.position.set(5.0, 1.8, 0.5);
   scene.add(edgeRight);
 
@@ -604,7 +604,7 @@ function addViewerLighting(scene) {
   bladeKick.position.set(0.8, 0.8, 3.5);
   scene.add(bladeKick);
 
-  const emberLight = new THREE.PointLight(0xd1843e, 0.85, 7.5, 2.2);
+  const emberLight = new THREE.PointLight(0xd1843e, 0.28, 4.5, 2.2);
   emberLight.position.set(-2.45, -1.06, 1.85);
   scene.add(emberLight);
 
