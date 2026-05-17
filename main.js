@@ -740,30 +740,8 @@ function createRadialGradientTexture(type) {
 }
 
 function addAtmosphereVeils(scene) {
-  const texture = createRadialGradientTexture("fog");
-  const material = new THREE.MeshBasicMaterial({
-    color: 0x7fa5ac,
-    transparent: true,
-    opacity: 0.018,
-    alphaMap: texture,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide
-  });
-
-  const veilPositions = [
-    [-2.6, 0.2, -2.9, 0.12],
-    [2.8, 0.9, -3.6, -0.18],
-    [0.2, -0.5, -4.2, 0.04]
-  ];
-
-  viewerState.atmosphereVeils = veilPositions.map(([x, y, z, rotation]) => {
-    const veil = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8), material.clone());
-    veil.position.set(x, y, z);
-    veil.rotation.y = rotation;
-    scene.add(veil);
-    return veil;
-  });
+  // Disabled — veils caused brownish arc artifact
+  viewerState.atmosphereVeils = [];
 }
 
 function createParticleField(scene, count, radius) {
