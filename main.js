@@ -944,13 +944,14 @@ function enhanceMaterial(material) {
 
   enhanced.envMapIntensity = profile.envMapIntensity;
 
-  // Safety net: if the material is still very dark AND highly metallic after all profile
-  // overrides it will render black in a dark environment. Force a visible steel base colour.
+  // Safety net: any material still very dark AND highly metallic after all profiles
+  // will render near-black in a dark scene — force a visible steel base colour.
+  // Threshold raised to 0.22 to catch all practically-dark metallic materials.
   if ("metalness" in enhanced && "color" in enhanced) {
     const luma = 0.2126 * enhanced.color.r + 0.7152 * enhanced.color.g + 0.0722 * enhanced.color.b;
-    if (enhanced.metalness > 0.55 && luma < 0.07) {
-      enhanced.color.setHex(0x4a4f4e);
-      enhanced.roughness = Math.max(enhanced.roughness, 0.30);
+    if (enhanced.metalness > 0.55 && luma < 0.22) {
+      enhanced.color.setHex(0x606866);
+      enhanced.roughness = Math.max(enhanced.roughness, 0.32);
     }
   }
 
@@ -1003,27 +1004,27 @@ function getMaterialProfile(name) {
   }
 
   if (name.includes("blade") || name.includes("sword") || name.includes("rapier") || name.includes("zweihander")) {
-    return { color: 0x545958, metalness: 0.92, roughness: 0.28, envMapIntensity: 1.45, clearcoat: 0.1, clearcoatRoughness: 0.22, specularIntensity: 0.9, ior: 1.55, useRoughnessNoise: true };
+    return { color: 0x6a7270, metalness: 0.85, roughness: 0.36, envMapIntensity: 1.45, clearcoat: 0.1, clearcoatRoughness: 0.22, specularIntensity: 0.9, ior: 1.55, useRoughnessNoise: true };
   }
 
   if (name.includes("steel") && !name.includes("dark")) {
-    return { color: 0x6e7472, metalness: 0.95, roughness: 0.22, envMapIntensity: 1.5, clearcoat: 0.12, clearcoatRoughness: 0.2, specularIntensity: 0.92, ior: 1.56, useRoughnessNoise: true };
+    return { color: 0x7e8482, metalness: 0.88, roughness: 0.34, envMapIntensity: 1.5, clearcoat: 0.12, clearcoatRoughness: 0.2, specularIntensity: 0.92, ior: 1.56, useRoughnessNoise: true };
   }
 
   if (name.includes("dark steel")) {
-    return { color: 0x4e5149, metalness: 1.0, roughness: 0.22, envMapIntensity: 1.45, clearcoat: 0.08, clearcoatRoughness: 0.24, specularIntensity: 0.9, ior: 1.55, useRoughnessNoise: true, normalScale: 0.8 };
+    return { color: 0x626866, metalness: 0.82, roughness: 0.40, envMapIntensity: 1.45, clearcoat: 0.08, clearcoatRoughness: 0.28, specularIntensity: 0.88, ior: 1.55, useRoughnessNoise: true, normalScale: 0.8 };
   }
 
   if (name.includes("damascus")) {
-    return { color: 0x6f6b5f, metalness: 1.0, roughness: 0.18, envMapIntensity: 1.65, clearcoat: 0.18, clearcoatRoughness: 0.18, specularIntensity: 0.95, ior: 1.58, useRoughnessNoise: true, normalScale: 0.7 };
+    return { color: 0x787468, metalness: 0.88, roughness: 0.30, envMapIntensity: 1.55, clearcoat: 0.18, clearcoatRoughness: 0.18, specularIntensity: 0.95, ior: 1.58, useRoughnessNoise: true, normalScale: 0.7 };
   }
 
   if (name.includes("light iron") || name.includes("iron")) {
-    return { color: 0x8d8a80, metalness: 1.0, roughness: 0.24, envMapIntensity: 1.25, clearcoat: 0.08, clearcoatRoughness: 0.26, specularIntensity: 0.86, ior: 1.52, tintTextured: true, useRoughnessNoise: true };
+    return { color: 0x8d8a80, metalness: 0.88, roughness: 0.32, envMapIntensity: 1.25, clearcoat: 0.08, clearcoatRoughness: 0.26, specularIntensity: 0.86, ior: 1.52, tintTextured: true, useRoughnessNoise: true };
   }
 
   if (name.includes("silver")) {
-    return { color: 0x8f9189, metalness: 1.0, roughness: 0.21, envMapIntensity: 1.38, clearcoat: 0.12, clearcoatRoughness: 0.22, specularIntensity: 0.92, ior: 1.55, useRoughnessNoise: true };
+    return { color: 0x9a9e9c, metalness: 0.92, roughness: 0.28, envMapIntensity: 1.38, clearcoat: 0.12, clearcoatRoughness: 0.22, specularIntensity: 0.92, ior: 1.55, useRoughnessNoise: true };
   }
 
   if (name.includes("diamond")) {
@@ -1031,7 +1032,7 @@ function getMaterialProfile(name) {
   }
 
   if (name.includes("gold")) {
-    return { color: 0x9d6f2f, metalness: 0.86, roughness: 0.34, envMapIntensity: 1.05, clearcoat: 0.12, clearcoatRoughness: 0.3, specularIntensity: 0.72, useRoughnessNoise: true };
+    return { color: 0xb8822e, metalness: 0.90, roughness: 0.28, envMapIntensity: 1.15, clearcoat: 0.12, clearcoatRoughness: 0.28, specularIntensity: 0.78, useRoughnessNoise: true };
   }
 
   if (name.includes("carbon")) {
