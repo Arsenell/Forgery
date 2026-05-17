@@ -62,10 +62,10 @@ const SWORDS = [
     lore: "A duelist's blade with a needle profile, built for fast camera reads and elegant reflective highlights.",
     origin: "Moonlit court",
     material: "Polished steel",
-    camera: [2.9, 1.25, 6.35],
+    camera: [2.9, 1.6, 9.5],
     targetSize: 3.15,
     previewSize: 2.85,
-    fullViewDistance: 9.05
+    fullViewDistance: 11.0
   },
   {
     id: "sword2",
