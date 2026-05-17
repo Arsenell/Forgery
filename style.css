@@ -580,12 +580,39 @@ a {
   min-height: 100svh;
   overflow: hidden;
   background:
-    radial-gradient(circle at 54% 48%, rgba(238, 242, 243, 0.13), transparent 19rem),
-    radial-gradient(circle at 68% 22%, rgba(209, 132, 62, 0.12), transparent 28rem),
-    linear-gradient(180deg, #0b0d10, #050607);
+    radial-gradient(circle at 58% 40%, rgba(176, 203, 207, 0.16), transparent 19rem),
+    radial-gradient(circle at 72% 26%, rgba(209, 132, 62, 0.12), transparent 30rem),
+    radial-gradient(circle at 50% 80%, rgba(117, 169, 181, 0.12), transparent 19rem),
+    linear-gradient(180deg, #0c0e10, #030405 72%);
+}
+
+.viewer-canvas-wrap::before,
+.viewer-canvas-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.viewer-canvas-wrap::before {
+  z-index: 2;
+  background:
+    radial-gradient(circle at 50% 76%, rgba(128, 172, 181, 0.14), transparent 18rem),
+    linear-gradient(90deg, rgba(3, 4, 5, 0.36), transparent 34%, transparent 66%, rgba(3, 4, 5, 0.44));
+  mix-blend-mode: screen;
+  opacity: 0.68;
+}
+
+.viewer-canvas-wrap::after {
+  z-index: 3;
+  background:
+    radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 28%, rgba(0, 0, 0, 0.3));
 }
 
 #viewerCanvas {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: block;
@@ -598,6 +625,7 @@ a {
 
 .viewer-overlay {
   position: absolute;
+  z-index: 4;
   left: clamp(1rem, 3vw, 2rem);
   right: clamp(1rem, 3vw, 2rem);
   bottom: clamp(1rem, 3vw, 2rem);
@@ -618,6 +646,7 @@ a {
 
 .loading-overlay {
   position: absolute;
+  z-index: 5;
   inset: 0;
   display: grid;
   place-items: center;

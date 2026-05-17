@@ -1,10 +1,14 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js";
+import { RGBELoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/RGBELoader.js";
 import { RoomEnvironment } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/environments/RoomEnvironment.js";
 import { EffectComposer } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/OutputPass.js";
+
+const HDR_ENVIRONMENT_URL = "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/textures/equirectangular/moonless_golf_1k.hdr";
 
 const SWORDS = [
   {
@@ -51,45 +55,45 @@ const SWORDS = [
 const LIGHT_RIGS = {
   material: {
     label: "Material",
-    exposure: 1.0,
-    bloom: 0.1,
-    ambient: 0.34,
-    hemi: 1.05,
-    key: 1.55,
-    fill: 1.18,
-    rim: 1.22,
-    ember: 0.42,
-    head: 0.72,
+    exposure: 0.92,
+    bloom: 0.12,
+    ambient: 0.16,
+    hemi: 0.58,
+    key: 2.15,
+    fill: 0.72,
+    rim: 2.2,
+    ember: 0.85,
+    head: 0.32,
     keyColor: 0xf2eee4,
-    fillColor: 0xc7d5d7,
-    rimColor: 0xb9c9cc
+    fillColor: 0x8fb8bf,
+    rimColor: 0x9ed7e0
   },
   forge: {
     label: "Forge",
-    exposure: 0.96,
-    bloom: 0.16,
-    ambient: 0.22,
-    hemi: 0.75,
-    key: 1.12,
-    fill: 0.56,
-    rim: 1.7,
-    ember: 1.08,
-    head: 0.4,
+    exposure: 0.88,
+    bloom: 0.18,
+    ambient: 0.12,
+    hemi: 0.42,
+    key: 1.45,
+    fill: 0.42,
+    rim: 2.45,
+    ember: 1.75,
+    head: 0.24,
     keyColor: 0xffead0,
     fillColor: 0x7598a2,
     rimColor: 0x88b8c4
   },
   studio: {
     label: "Studio",
-    exposure: 1.08,
-    bloom: 0.06,
-    ambient: 0.42,
-    hemi: 1.18,
-    key: 1.35,
-    fill: 1.28,
-    rim: 0.82,
-    ember: 0.06,
-    head: 0.9,
+    exposure: 1.0,
+    bloom: 0.08,
+    ambient: 0.24,
+    hemi: 0.78,
+    key: 1.85,
+    fill: 1.15,
+    rim: 1.45,
+    ember: 0.18,
+    head: 0.48,
     keyColor: 0xffffff,
     fillColor: 0xd8e2e4,
     rimColor: 0xc6d4d8
@@ -130,6 +134,7 @@ const viewerState = {
   renderer: null,
   composer: null,
   bloomPass: null,
+  outputPass: null,
   controls: null,
   currentModel: null,
   currentSword: SWORDS[0],
@@ -139,7 +144,10 @@ const viewerState = {
   currentCameraView: "full",
   particles: null,
   particleSpeeds: null,
+  fogPlane: null,
   lights: null,
+  pmrem: null,
+  environmentTexture: null,
   targetCamera: new THREE.Vector3(...SWORDS[0].camera),
   targetControls: new THREE.Vector3(0, 0, 0)
 };
@@ -390,9 +398,9 @@ function initViewer() {
   const frame = document.getElementById("viewerFrame");
 
   viewerState.scene = new THREE.Scene();
-  viewerState.scene.fog = new THREE.FogExp2(0x060708, 0.055);
+  viewerState.scene.fog = new THREE.FogExp2(0x070809, 0.047);
 
-  viewerState.camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+  viewerState.camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
   viewerState.camera.position.set(...viewerState.currentSword.camera);
 
   viewerState.renderer = new THREE.WebGLRenderer({
@@ -407,26 +415,30 @@ function initViewer() {
   viewerState.renderer.toneMappingExposure = LIGHT_RIGS.material.exposure;
   viewerState.renderer.shadowMap.enabled = true;
   viewerState.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  viewerState.renderer.useLegacyLights = false;
 
-  const pmrem = new THREE.PMREMGenerator(viewerState.renderer);
-  viewerState.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.025).texture;
+  viewerState.pmrem = new THREE.PMREMGenerator(viewerState.renderer);
+  viewerState.pmrem.compileEquirectangularShader();
+  loadHDREnvironment();
 
   viewerState.controls = new OrbitControls(viewerState.camera, canvas);
   viewerState.controls.enableDamping = true;
-  viewerState.controls.dampingFactor = 0.065;
-  viewerState.controls.minDistance = 2.2;
-  viewerState.controls.maxDistance = 9.5;
+  viewerState.controls.dampingFactor = 0.075;
+  viewerState.controls.minDistance = 2.35;
+  viewerState.controls.maxDistance = 8.8;
   viewerState.controls.maxPolarAngle = Math.PI * 0.84;
-  viewerState.controls.target.set(0, 0, 0);
+  viewerState.controls.target.set(0, 0.08, 0);
 
   addViewerLighting(viewerState.scene);
   addViewerStage(viewerState.scene);
-  viewerState.particles = createParticleField(viewerState.scene, 220, 8.5);
+  viewerState.particles = createParticleField(viewerState.scene, 170, 8.5);
 
   viewerState.composer = new EffectComposer(viewerState.renderer);
   viewerState.composer.addPass(new RenderPass(viewerState.scene, viewerState.camera));
-  viewerState.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), LIGHT_RIGS.material.bloom, 0.42, 0.93);
+  viewerState.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), LIGHT_RIGS.material.bloom, 0.38, 0.88);
   viewerState.composer.addPass(viewerState.bloomPass);
+  viewerState.outputPass = new OutputPass();
+  viewerState.composer.addPass(viewerState.outputPass);
   applyLightingRig("material");
 
   const resizeObserver = new ResizeObserver(() => resizeViewer());
@@ -435,65 +447,138 @@ function initViewer() {
   loadSword("sword1", { playSound: false });
 }
 
+function loadHDREnvironment() {
+  const rgbeLoader = new RGBELoader();
+
+  rgbeLoader.load(
+    HDR_ENVIRONMENT_URL,
+    (hdrTexture) => {
+      hdrTexture.mapping = THREE.EquirectangularReflectionMapping;
+
+      if (viewerState.environmentTexture) {
+        viewerState.environmentTexture.dispose();
+      }
+
+      viewerState.environmentTexture = viewerState.pmrem.fromEquirectangular(hdrTexture).texture;
+      viewerState.scene.environment = viewerState.environmentTexture;
+      hdrTexture.dispose();
+    },
+    undefined,
+    () => {
+      viewerState.environmentTexture = viewerState.pmrem.fromScene(new RoomEnvironment(), 0.02).texture;
+      viewerState.scene.environment = viewerState.environmentTexture;
+    }
+  );
+}
+
 function addViewerLighting(scene) {
-  const ambient = new THREE.AmbientLight(0xdfe8e8, 0.18);
+  const ambient = new THREE.AmbientLight(0xb9c2c4, 0.14);
   scene.add(ambient);
 
-  const hemisphere = new THREE.HemisphereLight(0xd9e4e6, 0x14100d, 0.7);
+  const hemisphere = new THREE.HemisphereLight(0xb8c9ce, 0x100b08, 0.58);
   scene.add(hemisphere);
 
-  const keyLight = new THREE.DirectionalLight(0xf2eee4, 1.05);
-  keyLight.position.set(3.4, 4.8, 4.6);
+  const keyLight = new THREE.DirectionalLight(0xfff1da, 2.15);
+  keyLight.position.set(2.8, 5.2, 4.1);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(2048, 2048);
   keyLight.shadow.camera.near = 0.2;
   keyLight.shadow.camera.far = 18;
-  keyLight.shadow.camera.left = -5;
-  keyLight.shadow.camera.right = 5;
-  keyLight.shadow.camera.top = 5;
-  keyLight.shadow.camera.bottom = -5;
+  keyLight.shadow.camera.left = -4.5;
+  keyLight.shadow.camera.right = 4.5;
+  keyLight.shadow.camera.top = 4.5;
+  keyLight.shadow.camera.bottom = -4.5;
+  keyLight.shadow.bias = -0.00018;
+  keyLight.shadow.normalBias = 0.018;
   scene.add(keyLight);
 
-  const fillLight = new THREE.DirectionalLight(0x8fb0b8, 0.62);
-  fillLight.position.set(-2.8, 1.6, 3.4);
+  const fillLight = new THREE.DirectionalLight(0x86b8c2, 0.72);
+  fillLight.position.set(-3.6, 1.8, 3.2);
   scene.add(fillLight);
 
-  const rimLight = new THREE.DirectionalLight(0xb9c9cc, 0.95);
-  rimLight.position.set(-4.8, 2.1, -4.6);
+  const rimLight = new THREE.DirectionalLight(0x9ed7e0, 2.2);
+  rimLight.position.set(-4.8, 2.5, -4.8);
   scene.add(rimLight);
 
-  const emberLight = new THREE.PointLight(0xd1843e, 0.28, 8.5, 2.1);
-  emberLight.position.set(-2.8, -0.4, 2.2);
+  const emberLight = new THREE.PointLight(0xd1843e, 0.85, 7.5, 2.2);
+  emberLight.position.set(-2.45, -0.9, 1.85);
   scene.add(emberLight);
 
-  const headLight = new THREE.PointLight(0xf4f1e8, 0.72, 9, 1.6);
+  const underGlow = new THREE.PointLight(0x6ba9b8, 0.46, 5.5, 2.4);
+  underGlow.position.set(1.6, -1.55, -0.8);
+  scene.add(underGlow);
+
+  const headLight = new THREE.PointLight(0xf4f1e8, 0.32, 8, 1.8);
   headLight.position.copy(viewerState.camera.position);
   scene.add(headLight);
 
-  viewerState.lights = { ambient, hemisphere, keyLight, fillLight, rimLight, emberLight, headLight };
+  viewerState.lights = { ambient, hemisphere, keyLight, fillLight, rimLight, emberLight, underGlow, headLight };
 }
 
 function addViewerStage(scene) {
-  const floorMaterial = new THREE.MeshStandardMaterial({
-    color: 0x0b0d10,
-    metalness: 0.1,
-    roughness: 0.78,
+  const floorMaterial = new THREE.MeshPhysicalMaterial({
+    color: 0x11191b,
+    metalness: 0.15,
+    roughness: 0.42,
+    clearcoat: 0.38,
+    clearcoatRoughness: 0.78,
     transparent: true,
-    opacity: 0.88
+    opacity: 0.82
   });
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(4.4, 96), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(5.2, 128), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -1.72;
+  floor.position.y = -1.78;
   floor.receiveShadow = true;
   scene.add(floor);
 
+  const stoneMaterial = new THREE.MeshStandardMaterial({
+    color: 0x171a1b,
+    metalness: 0.03,
+    roughness: 0.82
+  });
+  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.42, 0.24, 96), stoneMaterial);
+  plinth.position.y = -1.64;
+  plinth.receiveShadow = true;
+  plinth.castShadow = true;
+  scene.add(plinth);
+
+  const plinthTop = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.94, 1.05, 0.08, 96),
+    new THREE.MeshStandardMaterial({ color: 0x242827, metalness: 0.08, roughness: 0.68 })
+  );
+  plinthTop.position.y = -1.46;
+  plinthTop.receiveShadow = true;
+  plinthTop.castShadow = true;
+  scene.add(plinthTop);
+
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(1.85, 0.006, 8, 160),
-    new THREE.MeshBasicMaterial({ color: 0x8bbfca, transparent: true, opacity: 0.28 })
+    new THREE.TorusGeometry(1.72, 0.009, 8, 180),
+    new THREE.MeshBasicMaterial({ color: 0x8bbfca, transparent: true, opacity: 0.36 })
   );
   ring.rotation.x = Math.PI / 2;
-  ring.position.y = -1.67;
+  ring.position.y = -1.39;
   scene.add(ring);
+
+  const emberRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.78, 0.01, 8, 128),
+    new THREE.MeshBasicMaterial({ color: 0xd1843e, transparent: true, opacity: 0.18 })
+  );
+  emberRing.rotation.x = Math.PI / 2;
+  emberRing.position.y = -1.33;
+  scene.add(emberRing);
+
+  const fogMaterial = new THREE.MeshBasicMaterial({
+    color: 0x9fbfc6,
+    transparent: true,
+    opacity: 0.055,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  const fogPlane = new THREE.Mesh(new THREE.CircleGeometry(3.9, 96), fogMaterial);
+  fogPlane.rotation.x = -Math.PI / 2;
+  fogPlane.position.y = -1.3;
+  scene.add(fogPlane);
+  viewerState.fogPlane = fogPlane;
 }
 
 function createParticleField(scene, count, radius) {
@@ -522,10 +607,10 @@ function createParticleField(scene, count, radius) {
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
   const material = new THREE.PointsMaterial({
-    size: 0.035,
+    size: 0.03,
     vertexColors: true,
     transparent: true,
-    opacity: 0.62,
+    opacity: 0.52,
     depthWrite: false,
     blending: THREE.AdditiveBlending
   });
@@ -560,6 +645,7 @@ function loadSword(id, options = {}) {
       prepareModel(model);
       normalizeModel(model, sword.targetSize);
       model.position.y += 0.28;
+      applyPresentationPose(model);
       applyWireframe(model, viewerState.wireframe);
       viewerState.scene.add(model);
       viewerState.currentModel = model;
@@ -579,11 +665,19 @@ function loadSword(id, options = {}) {
       const fallback = createFallbackSword();
       normalizeModel(fallback, sword.targetSize);
       fallback.position.y += 0.28;
+      applyPresentationPose(fallback);
       viewerState.scene.add(fallback);
       viewerState.currentModel = fallback;
       setLoading(false);
     }
   );
+}
+
+function applyPresentationPose(model) {
+  model.rotation.x = THREE.MathUtils.degToRad(1.5);
+  model.rotation.z = THREE.MathUtils.degToRad(-4.8);
+  model.userData.baseTiltX = model.rotation.x;
+  model.userData.baseTiltZ = model.rotation.z;
 }
 
 function prepareModel(model) {
@@ -625,6 +719,18 @@ function enhanceMaterial(material) {
     enhanced.roughness = profile.roughness;
   }
 
+  if ("clearcoat" in enhanced && typeof profile.clearcoat === "number") {
+    enhanced.clearcoat = profile.clearcoat;
+  }
+
+  if ("clearcoatRoughness" in enhanced && typeof profile.clearcoatRoughness === "number") {
+    enhanced.clearcoatRoughness = profile.clearcoatRoughness;
+  }
+
+  if (enhanced.map) {
+    enhanced.map.colorSpace = THREE.SRGBColorSpace;
+  }
+
   enhanced.envMapIntensity = profile.envMapIntensity;
   enhanced.needsUpdate = true;
   return enhanced;
@@ -632,30 +738,30 @@ function enhanceMaterial(material) {
 
 function getMaterialProfile(name) {
   if (name.includes("damascus")) {
-    return { color: 0x777b61, metalness: 0.72, roughness: 0.36, envMapIntensity: 0.54 };
+    return { color: 0x8b8972, metalness: 1.0, roughness: 0.22, envMapIntensity: 1.55, clearcoat: 0.25, clearcoatRoughness: 0.18 };
   }
 
   if (name.includes("gold")) {
-    return { color: 0xc09343, metalness: 0.88, roughness: 0.32, envMapIntensity: 0.5 };
+    return { color: 0xb78a3f, metalness: 0.9, roughness: 0.3, envMapIntensity: 1.2, clearcoat: 0.18, clearcoatRoughness: 0.24 };
   }
 
   if (name.includes("carbon")) {
-    return { color: 0x1a1e1d, metalness: 0.3, roughness: 0.58, envMapIntensity: 0.32 };
+    return { color: 0x191d1c, metalness: 0.42, roughness: 0.48, envMapIntensity: 0.85 };
   }
 
   if (name.includes("metallic pattern")) {
-    return { color: 0x3a3c36, metalness: 0.82, roughness: 0.32, envMapIntensity: 0.48 };
+    return { color: 0x4d5049, metalness: 0.82, roughness: 0.34, envMapIntensity: 1.1 };
   }
 
   if (name.includes("leather fabric") || name.includes("leather")) {
-    return { color: 0x342116, metalness: 0.02, roughness: 0.78, envMapIntensity: 0.26, tintTextured: true };
+    return { color: 0x3b2417, metalness: 0.0, roughness: 0.74, envMapIntensity: 0.28, tintTextured: true };
   }
 
   if (name.includes("bondage") || name.includes("fabric")) {
-    return { color: 0x252525, metalness: 0.0, roughness: 0.76, envMapIntensity: 0.22 };
+    return { color: 0x262626, metalness: 0.0, roughness: 0.76, envMapIntensity: 0.24 };
   }
 
-  return { color: null, envMapIntensity: 0.38 };
+  return { color: null, envMapIntensity: 0.95 };
 }
 
 function normalizeModel(model, targetSize) {
@@ -914,6 +1020,7 @@ function applyLightingRig(id) {
     viewerState.lights.rimLight.intensity = rig.rim;
     viewerState.lights.rimLight.color.setHex(rig.rimColor);
     viewerState.lights.emberLight.intensity = rig.ember;
+    viewerState.lights.underGlow.intensity = rig.ember * 0.42;
     viewerState.lights.headLight.intensity = rig.head;
   }
 
@@ -1038,6 +1145,17 @@ function animateViewer(delta) {
 
   if (viewerState.currentModel && viewerState.autoRotate) {
     viewerState.currentModel.rotation.y += delta * 0.28;
+  }
+
+  if (viewerState.currentModel) {
+    const time = performance.now() * 0.001;
+    viewerState.currentModel.rotation.x = viewerState.currentModel.userData.baseTiltX + Math.sin(time * 0.75) * 0.012;
+    viewerState.currentModel.rotation.z = viewerState.currentModel.userData.baseTiltZ + Math.sin(time * 0.55) * 0.01;
+  }
+
+  if (viewerState.fogPlane) {
+    viewerState.fogPlane.rotation.z += delta * 0.045;
+    viewerState.fogPlane.material.opacity = 0.045 + Math.sin(performance.now() * 0.0007) * 0.014;
   }
 
   if (viewerState.particles) {
