@@ -9,7 +9,7 @@ import { ShaderPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/
 import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/OutputPass.js";
 
-const HDR_ENVIRONMENT_URL = "./hdr/venice_sunset_1k.hdr";
+const HDR_ENVIRONMENT_URL = "./hdr/studio_small_04_1k.hdr";
 
 const CinematicGradeShader = {
   uniforms: {
@@ -553,7 +553,7 @@ function loadHDREnvironment() {
 
       viewerState.environmentTexture = viewerState.pmrem.fromEquirectangular(hdrTexture).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
-      viewerState.scene.environmentIntensity = 0.8;
+      viewerState.scene.environmentIntensity = 0.55;
       hdrTexture.dispose();
     },
     undefined,
