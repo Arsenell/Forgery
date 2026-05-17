@@ -604,7 +604,7 @@ function addViewerLighting(scene) {
   bladeKick.position.set(0.8, 0.8, 3.5);
   scene.add(bladeKick);
 
-  const emberLight = new THREE.PointLight(0xd1843e, 0.28, 4.5, 2.2);
+  const emberLight = new THREE.PointLight(0xd1843e, 0.0, 4.5, 2.2);
   emberLight.position.set(-2.45, -1.06, 1.85);
   scene.add(emberLight);
 
