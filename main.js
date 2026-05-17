@@ -22,7 +22,8 @@ const SWORDS = [
     material: "Polished steel",
     camera: [2.9, 1.25, 6.35],
     targetSize: 3.15,
-    previewSize: 2.85
+    previewSize: 2.85,
+    fullViewDistance: 9.05
   },
   {
     id: "sword2",
@@ -35,7 +36,8 @@ const SWORDS = [
     material: "Iron and leather",
     camera: [3.0, 1.25, 5.8],
     targetSize: 3.05,
-    previewSize: 2.7
+    previewSize: 2.7,
+    fullViewDistance: 9.05
   },
   {
     id: "sword3",
@@ -48,7 +50,8 @@ const SWORDS = [
     material: "Dark steel",
     camera: [3.6, 1.35, 7.15],
     targetSize: 3.45,
-    previewSize: 3.05
+    previewSize: 3.05,
+    fullViewDistance: 9.25
   }
 ];
 
@@ -85,15 +88,15 @@ const LIGHT_RIGS = {
   },
   studio: {
     label: "Studio",
-    exposure: 1.0,
+    exposure: 0.96,
     bloom: 0.08,
-    ambient: 0.24,
-    hemi: 0.78,
-    key: 1.85,
-    fill: 1.15,
+    ambient: 0.22,
+    hemi: 0.68,
+    key: 1.62,
+    fill: 0.9,
     rim: 1.45,
     ember: 0.18,
-    head: 0.48,
+    head: 0.36,
     keyColor: 0xffffff,
     fillColor: 0xd8e2e4,
     rimColor: 0xc6d4d8
@@ -425,7 +428,7 @@ function initViewer() {
   viewerState.controls.enableDamping = true;
   viewerState.controls.dampingFactor = 0.075;
   viewerState.controls.minDistance = 2.35;
-  viewerState.controls.maxDistance = 8.8;
+  viewerState.controls.maxDistance = 12.5;
   viewerState.controls.maxPolarAngle = Math.PI * 0.84;
   viewerState.controls.target.set(0, 0.08, 0);
 
@@ -624,7 +627,6 @@ function createParticleField(scene, count, radius) {
 function loadSword(id, options = {}) {
   const sword = swordById.get(id) || SWORDS[0];
   viewerState.currentSword = sword;
-  setCameraView(viewerState.currentCameraView, { immediateSword: sword });
   setLoading(true, `Loading ${sword.shortName}...`);
   updateSwordUI(sword);
   setSelectorState(sword.id);
@@ -649,6 +651,7 @@ function loadSword(id, options = {}) {
       applyWireframe(model, viewerState.wireframe);
       viewerState.scene.add(model);
       viewerState.currentModel = model;
+      setCameraView(viewerState.currentCameraView, { immediateSword: sword, immediateModel: model });
       setLoading(false);
     },
     (event) => {
@@ -668,6 +671,7 @@ function loadSword(id, options = {}) {
       applyPresentationPose(fallback);
       viewerState.scene.add(fallback);
       viewerState.currentModel = fallback;
+      setCameraView(viewerState.currentCameraView, { immediateSword: sword, immediateModel: fallback });
       setLoading(false);
     }
   );
@@ -700,13 +704,22 @@ function enhanceMaterial(material) {
 
   const enhanced = material.clone();
   const name = (enhanced.name || "").toLowerCase();
-  const profile = getMaterialProfile(name);
+  let profile = getMaterialProfile(name);
+  const isNearWhite = enhanced.color && enhanced.color.r > 0.86 && enhanced.color.g > 0.86 && enhanced.color.b > 0.86;
+
+  if (isNearWhite && !profile.preserveBright) {
+    profile = {
+      ...profile,
+      color: profile.color ?? 0xa9a49a,
+      roughness: typeof profile.roughness === "number" ? Math.max(profile.roughness, 0.34) : 0.42,
+      envMapIntensity: Math.min(profile.envMapIntensity ?? 0.8, 0.85)
+    };
+  }
 
   if (profile.color && enhanced.color) {
     const hasTexture = Boolean(enhanced.map);
-    const isDefaultWhite = enhanced.color.r > 0.92 && enhanced.color.g > 0.92 && enhanced.color.b > 0.92;
 
-    if (!hasTexture || profile.tintTextured || isDefaultWhite) {
+    if (!hasTexture || profile.tintTextured || isNearWhite) {
       enhanced.color.setHex(profile.color);
     }
   }
@@ -737,8 +750,28 @@ function enhanceMaterial(material) {
 }
 
 function getMaterialProfile(name) {
+  if (!name) {
+    return { color: 0xa8a095, metalness: 0.55, roughness: 0.44, envMapIntensity: 0.72 };
+  }
+
+  if (name.includes("dark steel")) {
+    return { color: 0x30342f, metalness: 0.92, roughness: 0.32, envMapIntensity: 0.95, clearcoat: 0.08, clearcoatRoughness: 0.3 };
+  }
+
   if (name.includes("damascus")) {
     return { color: 0x8b8972, metalness: 1.0, roughness: 0.22, envMapIntensity: 1.55, clearcoat: 0.25, clearcoatRoughness: 0.18 };
+  }
+
+  if (name.includes("light iron") || name.includes("iron")) {
+    return { color: 0x99978d, metalness: 0.88, roughness: 0.38, envMapIntensity: 0.88, clearcoat: 0.08, clearcoatRoughness: 0.32, tintTextured: true };
+  }
+
+  if (name.includes("silver")) {
+    return { color: 0xa8a79f, metalness: 0.9, roughness: 0.34, envMapIntensity: 0.9, clearcoat: 0.1, clearcoatRoughness: 0.28 };
+  }
+
+  if (name.includes("diamond")) {
+    return { color: 0xb8b1a4, metalness: 0.18, roughness: 0.48, envMapIntensity: 0.5 };
   }
 
   if (name.includes("gold")) {
@@ -779,6 +812,25 @@ function normalizeModel(model, targetSize) {
   const scale = targetSize / maxAxis;
   model.scale.setScalar(scale);
   model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+}
+
+function getFullViewFrame(model, sword) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+
+  const fov = THREE.MathUtils.degToRad(viewerState.camera.fov);
+  const aspect = Math.max(viewerState.camera.aspect || 1, 0.5);
+  const padding = 1.28;
+  const verticalFit = (size.y * padding) / (2 * Math.tan(fov / 2));
+  const horizontalFit = (Math.max(size.x, size.z) * padding) / (2 * Math.tan(fov / 2) * aspect);
+  const distance = Math.max(verticalFit, horizontalFit, sword.fullViewDistance ?? 9.05);
+  const direction = new THREE.Vector3(0.36, 0.12, 1).normalize();
+  const position = center.clone().addScaledVector(direction, distance);
+
+  return { position, target: center };
 }
 
 function createFallbackSword() {
@@ -1032,7 +1084,7 @@ function applyLightingRig(id) {
 }
 
 function setExposure(value) {
-  const exposure = THREE.MathUtils.clamp(value, 0.7, 1.65);
+  const exposure = THREE.MathUtils.clamp(value, 0.7, 1.25);
 
   if (viewerState.renderer) {
     viewerState.renderer.toneMappingExposure = exposure;
@@ -1054,11 +1106,14 @@ function setExposure(value) {
 function setCameraView(id, options = {}) {
   const view = CAMERA_VIEWS[id] || CAMERA_VIEWS.full;
   const sword = options.immediateSword || viewerState.currentSword;
+  const model = options.immediateModel || viewerState.currentModel;
   viewerState.currentCameraView = id in CAMERA_VIEWS ? id : "full";
-  const position = view.position || sword.camera;
+  const fullFrame = viewerState.currentCameraView === "full" && model ? getFullViewFrame(model, sword) : null;
+  const position = fullFrame?.position.toArray() || view.position || sword.camera;
+  const target = fullFrame?.target.toArray() || view.target;
 
   viewerState.targetCamera.set(...position);
-  viewerState.targetControls.set(...view.target);
+  viewerState.targetControls.set(...target);
 
   document.querySelectorAll("[data-camera-view]").forEach((button) => {
     button.classList.toggle("active", button.dataset.cameraView === viewerState.currentCameraView);
@@ -1100,6 +1155,10 @@ function resizeViewer() {
   viewerState.camera.updateProjectionMatrix();
   viewerState.composer.setSize(width, height);
   viewerState.bloomPass.setSize(width, height);
+
+  if (viewerState.currentCameraView === "full" && viewerState.currentModel) {
+    setCameraView("full");
+  }
 }
 
 function resizeHero() {
