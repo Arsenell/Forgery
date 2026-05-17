@@ -539,14 +539,14 @@ function loadHDREnvironment() {
 
       viewerState.environmentTexture = viewerState.pmrem.fromEquirectangular(hdrTexture).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
-      viewerState.scene.environmentIntensity = 1.55;
+      viewerState.scene.environmentIntensity = 0.8;
       hdrTexture.dispose();
     },
     undefined,
     () => {
       viewerState.environmentTexture = viewerState.pmrem.fromScene(new RoomEnvironment(), 0.02).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
-      viewerState.scene.environmentIntensity = 1.15;
+      viewerState.scene.environmentIntensity = 0.65;
     }
   );
 }
