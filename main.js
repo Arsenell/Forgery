@@ -621,14 +621,13 @@ function addViewerLighting(scene) {
 
 function addViewerStage(scene) {
   const floorMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x0d1416,
-    metalness: 0.2,
-    roughness: 0.34,
-    clearcoat: 0.08,
-    clearcoatRoughness: 0.72,
-    envMapIntensity: 0.46,
+    color: 0x030405,
+    metalness: 0.0,
+    roughness: 0.98,
+    clearcoat: 0.0,
+    envMapIntensity: 0.0,
     transparent: true,
-    opacity: 0.88
+    opacity: 0.92
   });
   const floor = new THREE.Mesh(new THREE.CircleGeometry(5.9, 160), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
@@ -700,7 +699,7 @@ function addViewerStage(scene) {
   const fogMaterial = new THREE.MeshBasicMaterial({
     color: 0x9fbfc6,
     transparent: true,
-    opacity: 0.018,
+    opacity: 0.0,
     alphaMap: createRadialGradientTexture("fog"),
     depthWrite: false,
     blending: THREE.AdditiveBlending
