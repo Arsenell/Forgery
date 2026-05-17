@@ -5,10 +5,52 @@ import { RGBELoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/
 import { RoomEnvironment } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/environments/RoomEnvironment.js";
 import { EffectComposer } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/RenderPass.js";
+import { ShaderPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/ShaderPass.js";
 import { UnrealBloomPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/postprocessing/OutputPass.js";
 
-const HDR_ENVIRONMENT_URL = "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/textures/equirectangular/moonless_golf_1k.hdr";
+const HDR_ENVIRONMENT_URL = "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/textures/equirectangular/venice_sunset_1k.hdr";
+
+const CinematicGradeShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    contrast: { value: 1.08 },
+    saturation: { value: 0.94 },
+    vignette: { value: 0.42 },
+    tint: { value: new THREE.Vector3(1.02, 0.98, 0.92) }
+  },
+  vertexShader: `
+    varying vec2 vUv;
+
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D tDiffuse;
+    uniform float contrast;
+    uniform float saturation;
+    uniform float vignette;
+    uniform vec3 tint;
+    varying vec2 vUv;
+
+    void main() {
+      vec4 texel = texture2D(tDiffuse, vUv);
+      vec3 color = texel.rgb;
+      float luma = dot(color, vec3(0.2126, 0.7152, 0.0722));
+      color = mix(vec3(luma), color, saturation);
+      color = ((color - 0.5) * contrast) + 0.5;
+      color *= tint;
+
+      float distanceFromCenter = distance(vUv, vec2(0.5));
+      float edge = smoothstep(0.34, 0.78, distanceFromCenter);
+      color *= 1.0 - edge * vignette;
+
+      gl_FragColor = vec4(color, texel.a);
+    }
+  `
+};
 
 const SWORDS = [
   {
@@ -58,47 +100,47 @@ const SWORDS = [
 const LIGHT_RIGS = {
   material: {
     label: "Material",
-    exposure: 0.92,
-    bloom: 0.12,
-    ambient: 0.16,
-    hemi: 0.58,
-    key: 2.15,
-    fill: 0.72,
-    rim: 2.2,
+    exposure: 0.85,
+    bloom: 0.1,
+    ambient: 0.1,
+    hemi: 0.38,
+    key: 2.45,
+    fill: 0.42,
+    rim: 2.85,
     ember: 0.85,
-    head: 0.32,
-    keyColor: 0xf2eee4,
-    fillColor: 0x8fb8bf,
-    rimColor: 0x9ed7e0
+    head: 0.18,
+    keyColor: 0xffedd2,
+    fillColor: 0x6f9fac,
+    rimColor: 0xb8ecf2
   },
   forge: {
     label: "Forge",
-    exposure: 0.88,
-    bloom: 0.18,
-    ambient: 0.12,
-    hemi: 0.42,
-    key: 1.45,
-    fill: 0.42,
-    rim: 2.45,
-    ember: 1.75,
-    head: 0.24,
+    exposure: 0.8,
+    bloom: 0.16,
+    ambient: 0.08,
+    hemi: 0.28,
+    key: 1.7,
+    fill: 0.24,
+    rim: 2.95,
+    ember: 1.95,
+    head: 0.14,
     keyColor: 0xffead0,
-    fillColor: 0x7598a2,
-    rimColor: 0x88b8c4
+    fillColor: 0x5f8792,
+    rimColor: 0x9fced8
   },
   studio: {
     label: "Studio",
-    exposure: 0.96,
-    bloom: 0.08,
-    ambient: 0.22,
-    hemi: 0.68,
-    key: 1.62,
-    fill: 0.9,
-    rim: 1.45,
+    exposure: 0.92,
+    bloom: 0.06,
+    ambient: 0.16,
+    hemi: 0.5,
+    key: 1.9,
+    fill: 0.64,
+    rim: 1.95,
     ember: 0.18,
-    head: 0.36,
+    head: 0.2,
     keyColor: 0xffffff,
-    fillColor: 0xd8e2e4,
+    fillColor: 0xb9d4d8,
     rimColor: 0xc6d4d8
   }
 };
@@ -137,22 +179,31 @@ const viewerState = {
   renderer: null,
   composer: null,
   bloomPass: null,
+  gradePass: null,
   outputPass: null,
   controls: null,
   currentModel: null,
   currentSword: SWORDS[0],
   autoRotate: !prefersReducedMotion,
+  userInteracting: false,
   wireframe: false,
   currentLighting: "material",
   currentCameraView: "full",
   particles: null,
   particleSpeeds: null,
   fogPlane: null,
+  atmosphereVeils: [],
+  contactShadow: null,
   lights: null,
   pmrem: null,
   environmentTexture: null,
+  metalRoughnessTexture: null,
   targetCamera: new THREE.Vector3(...SWORDS[0].camera),
-  targetControls: new THREE.Vector3(0, 0, 0)
+  targetControls: new THREE.Vector3(0, 0, 0),
+  cameraDrift: new THREE.Vector3(),
+  controlsDrift: new THREE.Vector3(),
+  cameraLerpTarget: new THREE.Vector3(),
+  controlsLerpTarget: new THREE.Vector3()
 };
 
 const heroState = {
@@ -401,7 +452,7 @@ function initViewer() {
   const frame = document.getElementById("viewerFrame");
 
   viewerState.scene = new THREE.Scene();
-  viewerState.scene.fog = new THREE.FogExp2(0x070809, 0.047);
+  viewerState.scene.fog = new THREE.FogExp2(0x050607, 0.058);
 
   viewerState.camera = new THREE.PerspectiveCamera(31, 1, 0.1, 100);
   viewerState.camera.position.set(...viewerState.currentSword.camera);
@@ -415,7 +466,7 @@ function initViewer() {
   viewerState.renderer.setPixelRatio(getPixelRatio());
   viewerState.renderer.outputColorSpace = THREE.SRGBColorSpace;
   viewerState.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  viewerState.renderer.toneMappingExposure = LIGHT_RIGS.material.exposure;
+  viewerState.renderer.toneMappingExposure = 0.85;
   viewerState.renderer.shadowMap.enabled = true;
   viewerState.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   viewerState.renderer.useLegacyLights = false;
@@ -432,14 +483,29 @@ function initViewer() {
   viewerState.controls.maxPolarAngle = Math.PI * 0.84;
   viewerState.controls.target.set(0, 0.08, 0);
 
+  // When the user starts dragging, stop lerping the camera so it doesn't fight OrbitControls
+  viewerState.controls.addEventListener('start', () => {
+    viewerState.userInteracting = true;
+  });
+
+  // When the user releases, sync the lerp targets to the current position so there is no snap-back
+  viewerState.controls.addEventListener('end', () => {
+    viewerState.userInteracting = false;
+    viewerState.targetCamera.copy(viewerState.camera.position);
+    viewerState.targetControls.copy(viewerState.controls.target);
+  });
+
   addViewerLighting(viewerState.scene);
   addViewerStage(viewerState.scene);
-  viewerState.particles = createParticleField(viewerState.scene, 170, 8.5);
+  addAtmosphereVeils(viewerState.scene);
+  viewerState.particles = createParticleField(viewerState.scene, 210, 8.8);
 
   viewerState.composer = new EffectComposer(viewerState.renderer);
   viewerState.composer.addPass(new RenderPass(viewerState.scene, viewerState.camera));
-  viewerState.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), LIGHT_RIGS.material.bloom, 0.38, 0.88);
+  viewerState.bloomPass = new UnrealBloomPass(new THREE.Vector2(1, 1), LIGHT_RIGS.material.bloom, 0.32, 0.9);
   viewerState.composer.addPass(viewerState.bloomPass);
+  viewerState.gradePass = new ShaderPass(CinematicGradeShader);
+  viewerState.composer.addPass(viewerState.gradePass);
   viewerState.outputPass = new OutputPass();
   viewerState.composer.addPass(viewerState.outputPass);
   applyLightingRig("material");
@@ -464,124 +530,211 @@ function loadHDREnvironment() {
 
       viewerState.environmentTexture = viewerState.pmrem.fromEquirectangular(hdrTexture).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
+      viewerState.scene.environmentIntensity = 0.92;
       hdrTexture.dispose();
     },
     undefined,
     () => {
       viewerState.environmentTexture = viewerState.pmrem.fromScene(new RoomEnvironment(), 0.02).texture;
       viewerState.scene.environment = viewerState.environmentTexture;
+      viewerState.scene.environmentIntensity = 0.72;
     }
   );
 }
 
 function addViewerLighting(scene) {
-  const ambient = new THREE.AmbientLight(0xb9c2c4, 0.14);
+  const ambient = new THREE.AmbientLight(0x9ca9ab, 0.1);
   scene.add(ambient);
 
-  const hemisphere = new THREE.HemisphereLight(0xb8c9ce, 0x100b08, 0.58);
+  const hemisphere = new THREE.HemisphereLight(0x9fb5bb, 0x0b0705, 0.38);
   scene.add(hemisphere);
 
-  const keyLight = new THREE.DirectionalLight(0xfff1da, 2.15);
-  keyLight.position.set(2.8, 5.2, 4.1);
+  const keyLight = new THREE.DirectionalLight(0xffedd2, 2.45);
+  keyLight.position.set(3.4, 5.6, 3.2);
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(2048, 2048);
   keyLight.shadow.camera.near = 0.2;
   keyLight.shadow.camera.far = 18;
-  keyLight.shadow.camera.left = -4.5;
-  keyLight.shadow.camera.right = 4.5;
-  keyLight.shadow.camera.top = 4.5;
-  keyLight.shadow.camera.bottom = -4.5;
+  keyLight.shadow.camera.left = -5;
+  keyLight.shadow.camera.right = 5;
+  keyLight.shadow.camera.top = 5;
+  keyLight.shadow.camera.bottom = -5;
+  keyLight.shadow.radius = 3;
   keyLight.shadow.bias = -0.00018;
   keyLight.shadow.normalBias = 0.018;
   scene.add(keyLight);
 
-  const fillLight = new THREE.DirectionalLight(0x86b8c2, 0.72);
-  fillLight.position.set(-3.6, 1.8, 3.2);
+  const fillLight = new THREE.DirectionalLight(0x6f9fac, 0.42);
+  fillLight.position.set(-4.6, 1.4, 2.9);
   scene.add(fillLight);
 
-  const rimLight = new THREE.DirectionalLight(0x9ed7e0, 2.2);
-  rimLight.position.set(-4.8, 2.5, -4.8);
+  const rimLight = new THREE.DirectionalLight(0xb8ecf2, 2.85);
+  rimLight.position.set(-5.4, 2.8, -5.2);
   scene.add(rimLight);
 
+  const bladeKick = new THREE.PointLight(0xf6f0df, 0.46, 4.5, 2.4);
+  bladeKick.position.set(1.25, 0.55, 1.05);
+  scene.add(bladeKick);
+
   const emberLight = new THREE.PointLight(0xd1843e, 0.85, 7.5, 2.2);
-  emberLight.position.set(-2.45, -0.9, 1.85);
+  emberLight.position.set(-2.45, -1.06, 1.85);
   scene.add(emberLight);
 
-  const underGlow = new THREE.PointLight(0x6ba9b8, 0.46, 5.5, 2.4);
+  const underGlow = new THREE.PointLight(0x6ba9b8, 0.36, 5.5, 2.4);
   underGlow.position.set(1.6, -1.55, -0.8);
   scene.add(underGlow);
 
-  const headLight = new THREE.PointLight(0xf4f1e8, 0.32, 8, 1.8);
+  const headLight = new THREE.PointLight(0xf4f1e8, 0.18, 8, 1.8);
   headLight.position.copy(viewerState.camera.position);
   scene.add(headLight);
 
-  viewerState.lights = { ambient, hemisphere, keyLight, fillLight, rimLight, emberLight, underGlow, headLight };
+  viewerState.lights = { ambient, hemisphere, keyLight, fillLight, rimLight, bladeKick, emberLight, underGlow, headLight };
 }
 
 function addViewerStage(scene) {
   const floorMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x11191b,
-    metalness: 0.15,
-    roughness: 0.42,
-    clearcoat: 0.38,
-    clearcoatRoughness: 0.78,
+    color: 0x0d1416,
+    metalness: 0.2,
+    roughness: 0.34,
+    clearcoat: 0.62,
+    clearcoatRoughness: 0.58,
+    envMapIntensity: 0.46,
     transparent: true,
-    opacity: 0.82
+    opacity: 0.88
   });
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(5.2, 128), floorMaterial);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(5.9, 160), floorMaterial);
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -1.78;
   floor.receiveShadow = true;
   scene.add(floor);
 
   const stoneMaterial = new THREE.MeshStandardMaterial({
-    color: 0x171a1b,
+    color: 0x141718,
     metalness: 0.03,
-    roughness: 0.82
+    roughness: 0.88
   });
-  const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.42, 0.24, 96), stoneMaterial);
-  plinth.position.y = -1.64;
+  const plinthBase = new THREE.Mesh(new THREE.CylinderGeometry(1.54, 1.78, 0.24, 128), stoneMaterial);
+  plinthBase.position.y = -1.66;
+  plinthBase.receiveShadow = true;
+  plinthBase.castShadow = true;
+  scene.add(plinthBase);
+
+  const plinth = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.04, 1.28, 0.32, 128),
+    new THREE.MeshStandardMaterial({ color: 0x1e2222, metalness: 0.06, roughness: 0.72 })
+  );
+  plinth.position.y = -1.43;
   plinth.receiveShadow = true;
   plinth.castShadow = true;
   scene.add(plinth);
 
   const plinthTop = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.94, 1.05, 0.08, 96),
-    new THREE.MeshStandardMaterial({ color: 0x242827, metalness: 0.08, roughness: 0.68 })
+    new THREE.CylinderGeometry(0.88, 1.02, 0.08, 128),
+    new THREE.MeshStandardMaterial({ color: 0x2c302e, metalness: 0.14, roughness: 0.58, envMapIntensity: 0.28 })
   );
-  plinthTop.position.y = -1.46;
+  plinthTop.position.y = -1.22;
   plinthTop.receiveShadow = true;
   plinthTop.castShadow = true;
   scene.add(plinthTop);
 
+  const contactShadow = new THREE.Mesh(
+    new THREE.CircleGeometry(1.72, 96),
+    new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      transparent: true,
+      opacity: 0.58,
+      alphaMap: createRadialGradientTexture("shadow"),
+      depthWrite: false
+    })
+  );
+  contactShadow.rotation.x = -Math.PI / 2;
+  contactShadow.position.y = -1.165;
+  scene.add(contactShadow);
+  viewerState.contactShadow = contactShadow;
+
   const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(1.72, 0.009, 8, 180),
-    new THREE.MeshBasicMaterial({ color: 0x8bbfca, transparent: true, opacity: 0.36 })
+    new THREE.TorusGeometry(1.94, 0.008, 8, 192),
+    new THREE.MeshBasicMaterial({ color: 0x8bbfca, transparent: true, opacity: 0.28 })
   );
   ring.rotation.x = Math.PI / 2;
-  ring.position.y = -1.39;
+  ring.position.y = -1.12;
   scene.add(ring);
 
   const emberRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.78, 0.01, 8, 128),
-    new THREE.MeshBasicMaterial({ color: 0xd1843e, transparent: true, opacity: 0.18 })
+    new THREE.TorusGeometry(0.82, 0.012, 8, 144),
+    new THREE.MeshBasicMaterial({ color: 0xd1843e, transparent: true, opacity: 0.2 })
   );
   emberRing.rotation.x = Math.PI / 2;
-  emberRing.position.y = -1.33;
+  emberRing.position.y = -1.1;
   scene.add(emberRing);
 
   const fogMaterial = new THREE.MeshBasicMaterial({
     color: 0x9fbfc6,
     transparent: true,
-    opacity: 0.055,
+    opacity: 0.045,
+    alphaMap: createRadialGradientTexture("fog"),
     depthWrite: false,
     blending: THREE.AdditiveBlending
   });
-  const fogPlane = new THREE.Mesh(new THREE.CircleGeometry(3.9, 96), fogMaterial);
+  const fogPlane = new THREE.Mesh(new THREE.CircleGeometry(4.4, 128), fogMaterial);
   fogPlane.rotation.x = -Math.PI / 2;
-  fogPlane.position.y = -1.3;
+  fogPlane.position.y = -1.06;
   scene.add(fogPlane);
   viewerState.fogPlane = fogPlane;
+}
+
+function createRadialGradientTexture(type) {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+
+  if (type === "shadow") {
+    gradient.addColorStop(0, "rgba(255,255,255,0.86)");
+    gradient.addColorStop(0.42, "rgba(255,255,255,0.38)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+  } else {
+    gradient.addColorStop(0, "rgba(255,255,255,0.42)");
+    gradient.addColorStop(0.54, "rgba(255,255,255,0.18)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+  }
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function addAtmosphereVeils(scene) {
+  const texture = createRadialGradientTexture("fog");
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x7fa5ac,
+    transparent: true,
+    opacity: 0.055,
+    alphaMap: texture,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide
+  });
+
+  const veilPositions = [
+    [-2.6, 0.2, -2.9, 0.12],
+    [2.8, 0.9, -3.6, -0.18],
+    [0.2, -0.5, -4.2, 0.04]
+  ];
+
+  viewerState.atmosphereVeils = veilPositions.map(([x, y, z, rotation]) => {
+    const veil = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8), material.clone());
+    veil.position.set(x, y, z);
+    veil.rotation.y = rotation;
+    scene.add(veil);
+    return veil;
+  });
 }
 
 function createParticleField(scene, count, radius) {
@@ -678,8 +831,8 @@ function loadSword(id, options = {}) {
 }
 
 function applyPresentationPose(model) {
-  model.rotation.x = THREE.MathUtils.degToRad(1.5);
-  model.rotation.z = THREE.MathUtils.degToRad(-4.8);
+  model.rotation.x = THREE.MathUtils.degToRad(2.2);
+  model.rotation.z = THREE.MathUtils.degToRad(-7.0);
   model.userData.baseTiltX = model.rotation.x;
   model.userData.baseTiltZ = model.rotation.z;
 }
@@ -711,6 +864,7 @@ function enhanceMaterial(material) {
     profile = {
       ...profile,
       color: profile.color ?? 0xa9a49a,
+      metalness: typeof profile.metalness === "number" ? profile.metalness : 0.72,
       roughness: typeof profile.roughness === "number" ? Math.max(profile.roughness, 0.34) : 0.42,
       envMapIntensity: Math.min(profile.envMapIntensity ?? 0.8, 0.85)
     };
@@ -740,6 +894,22 @@ function enhanceMaterial(material) {
     enhanced.clearcoatRoughness = profile.clearcoatRoughness;
   }
 
+  if ("specularIntensity" in enhanced && typeof profile.specularIntensity === "number") {
+    enhanced.specularIntensity = profile.specularIntensity;
+  }
+
+  if ("ior" in enhanced && typeof profile.ior === "number") {
+    enhanced.ior = profile.ior;
+  }
+
+  if (profile.useRoughnessNoise && "roughnessMap" in enhanced && !enhanced.roughnessMap) {
+    enhanced.roughnessMap = getMetalRoughnessTexture();
+  }
+
+  if (enhanced.normalMap && enhanced.normalScale && typeof profile.normalScale === "number") {
+    enhanced.normalScale.setScalar(profile.normalScale);
+  }
+
   if (enhanced.map) {
     enhanced.map.colorSpace = THREE.SRGBColorSpace;
   }
@@ -749,33 +919,67 @@ function enhanceMaterial(material) {
   return enhanced;
 }
 
+function getMetalRoughnessTexture() {
+  if (viewerState.metalRoughnessTexture) {
+    return viewerState.metalRoughnessTexture;
+  }
+
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+  const image = context.createImageData(size, size);
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const directionalGrain = Math.sin((x + y * 0.35) * 0.45) * 18;
+      const fineNoise = (Math.random() - 0.5) * 34;
+      const value = THREE.MathUtils.clamp(138 + directionalGrain + fineNoise, 82, 202);
+      image.data[index] = value;
+      image.data[index + 1] = value;
+      image.data[index + 2] = value;
+      image.data[index + 3] = 255;
+    }
+  }
+
+  context.putImageData(image, 0, 0);
+  viewerState.metalRoughnessTexture = new THREE.CanvasTexture(canvas);
+  viewerState.metalRoughnessTexture.wrapS = THREE.RepeatWrapping;
+  viewerState.metalRoughnessTexture.wrapT = THREE.RepeatWrapping;
+  viewerState.metalRoughnessTexture.repeat.set(2.4, 2.4);
+  viewerState.metalRoughnessTexture.needsUpdate = true;
+  return viewerState.metalRoughnessTexture;
+}
+
 function getMaterialProfile(name) {
   if (!name) {
-    return { color: 0xa8a095, metalness: 0.55, roughness: 0.44, envMapIntensity: 0.72 };
+    return { color: 0xa49b8d, metalness: 0.78, roughness: 0.38, envMapIntensity: 0.82, specularIntensity: 0.7 };
   }
 
   if (name.includes("dark steel")) {
-    return { color: 0x30342f, metalness: 0.92, roughness: 0.32, envMapIntensity: 0.95, clearcoat: 0.08, clearcoatRoughness: 0.3 };
+    return { color: 0x4e5149, metalness: 1.0, roughness: 0.22, envMapIntensity: 1.45, clearcoat: 0.08, clearcoatRoughness: 0.24, specularIntensity: 0.9, ior: 1.55, useRoughnessNoise: true, normalScale: 0.8 };
   }
 
   if (name.includes("damascus")) {
-    return { color: 0x8b8972, metalness: 1.0, roughness: 0.22, envMapIntensity: 1.55, clearcoat: 0.25, clearcoatRoughness: 0.18 };
+    return { color: 0x6f6b5f, metalness: 1.0, roughness: 0.18, envMapIntensity: 1.65, clearcoat: 0.18, clearcoatRoughness: 0.18, specularIntensity: 0.95, ior: 1.58, useRoughnessNoise: true, normalScale: 0.7 };
   }
 
   if (name.includes("light iron") || name.includes("iron")) {
-    return { color: 0x99978d, metalness: 0.88, roughness: 0.38, envMapIntensity: 0.88, clearcoat: 0.08, clearcoatRoughness: 0.32, tintTextured: true };
+    return { color: 0x8d8a80, metalness: 1.0, roughness: 0.24, envMapIntensity: 1.25, clearcoat: 0.08, clearcoatRoughness: 0.26, specularIntensity: 0.86, ior: 1.52, tintTextured: true, useRoughnessNoise: true };
   }
 
   if (name.includes("silver")) {
-    return { color: 0xa8a79f, metalness: 0.9, roughness: 0.34, envMapIntensity: 0.9, clearcoat: 0.1, clearcoatRoughness: 0.28 };
+    return { color: 0x8f9189, metalness: 1.0, roughness: 0.21, envMapIntensity: 1.38, clearcoat: 0.12, clearcoatRoughness: 0.22, specularIntensity: 0.92, ior: 1.55, useRoughnessNoise: true };
   }
 
   if (name.includes("diamond")) {
-    return { color: 0xb8b1a4, metalness: 0.18, roughness: 0.48, envMapIntensity: 0.5 };
+    return { color: 0xa49a8a, metalness: 0.12, roughness: 0.56, envMapIntensity: 0.44, specularIntensity: 0.35 };
   }
 
   if (name.includes("gold")) {
-    return { color: 0xb78a3f, metalness: 0.9, roughness: 0.3, envMapIntensity: 1.2, clearcoat: 0.18, clearcoatRoughness: 0.24 };
+    return { color: 0x9d6f2f, metalness: 0.86, roughness: 0.34, envMapIntensity: 1.05, clearcoat: 0.12, clearcoatRoughness: 0.3, specularIntensity: 0.72, useRoughnessNoise: true };
   }
 
   if (name.includes("carbon")) {
@@ -783,7 +987,7 @@ function getMaterialProfile(name) {
   }
 
   if (name.includes("metallic pattern")) {
-    return { color: 0x4d5049, metalness: 0.82, roughness: 0.34, envMapIntensity: 1.1 };
+    return { color: 0x444842, metalness: 0.9, roughness: 0.32, envMapIntensity: 1.15, useRoughnessNoise: true };
   }
 
   if (name.includes("leather fabric") || name.includes("leather")) {
@@ -823,14 +1027,15 @@ function getFullViewFrame(model, sword) {
 
   const fov = THREE.MathUtils.degToRad(viewerState.camera.fov);
   const aspect = Math.max(viewerState.camera.aspect || 1, 0.5);
-  const padding = 1.28;
+  const padding = 1.34;
   const verticalFit = (size.y * padding) / (2 * Math.tan(fov / 2));
   const horizontalFit = (Math.max(size.x, size.z) * padding) / (2 * Math.tan(fov / 2) * aspect);
   const distance = Math.max(verticalFit, horizontalFit, sword.fullViewDistance ?? 9.05);
-  const direction = new THREE.Vector3(0.36, 0.12, 1).normalize();
-  const position = center.clone().addScaledVector(direction, distance);
+  const target = center.clone().add(new THREE.Vector3(-0.12, 0.04, 0));
+  const direction = new THREE.Vector3(0.42, 0.18, 1).normalize();
+  const position = target.clone().addScaledVector(direction, distance);
 
-  return { position, target: center };
+  return { position, target };
 }
 
 function createFallbackSword() {
@@ -1071,7 +1276,9 @@ function applyLightingRig(id) {
     viewerState.lights.fillLight.color.setHex(rig.fillColor);
     viewerState.lights.rimLight.intensity = rig.rim;
     viewerState.lights.rimLight.color.setHex(rig.rimColor);
+    viewerState.lights.bladeKick.intensity = Math.max(0.18, rig.key * 0.18);
     viewerState.lights.emberLight.intensity = rig.ember;
+    viewerState.lights.emberLight.userData.baseIntensity = rig.ember;
     viewerState.lights.underGlow.intensity = rig.ember * 0.42;
     viewerState.lights.headLight.intensity = rig.head;
   }
@@ -1084,7 +1291,7 @@ function applyLightingRig(id) {
 }
 
 function setExposure(value) {
-  const exposure = THREE.MathUtils.clamp(value, 0.7, 1.25);
+  const exposure = THREE.MathUtils.clamp(value, 0.68, 1.15);
 
   if (viewerState.renderer) {
     viewerState.renderer.toneMappingExposure = exposure;
@@ -1194,27 +1401,59 @@ function animate() {
 function animateViewer(delta) {
   if (!viewerState.renderer) return;
 
-  viewerState.camera.position.lerp(viewerState.targetCamera, 0.035);
-  viewerState.controls.target.lerp(viewerState.targetControls, 0.04);
+  const time = performance.now() * 0.001;
+  const driftStrength = viewerState.autoRotate && !prefersReducedMotion ? 1 : 0;
+  viewerState.cameraDrift.set(
+    Math.sin(time * 0.28) * 0.11 * driftStrength,
+    Math.sin(time * 0.2 + 1.4) * 0.035 * driftStrength,
+    Math.cos(time * 0.22) * 0.08 * driftStrength
+  );
+  viewerState.controlsDrift.set(
+    Math.sin(time * 0.24 + 0.8) * 0.045 * driftStrength,
+    Math.sin(time * 0.18) * 0.018 * driftStrength,
+    0
+  );
+
+  if (!viewerState.userInteracting) {
+    viewerState.cameraLerpTarget.copy(viewerState.targetCamera).add(viewerState.cameraDrift);
+    viewerState.controlsLerpTarget.copy(viewerState.targetControls).add(viewerState.controlsDrift);
+    viewerState.camera.position.lerp(viewerState.cameraLerpTarget, 0.035);
+    viewerState.controls.target.lerp(viewerState.controlsLerpTarget, 0.04);
+  }
   viewerState.controls.update();
 
   if (viewerState.lights?.headLight) {
     viewerState.lights.headLight.position.copy(viewerState.camera.position);
   }
 
-  if (viewerState.currentModel && viewerState.autoRotate) {
-    viewerState.currentModel.rotation.y += delta * 0.28;
+  if (viewerState.currentModel && viewerState.autoRotate && !viewerState.userInteracting) {
+    viewerState.currentModel.rotation.y += delta * 0.22;
   }
 
-  if (viewerState.currentModel) {
-    const time = performance.now() * 0.001;
+  if (viewerState.currentModel && !viewerState.userInteracting) {
     viewerState.currentModel.rotation.x = viewerState.currentModel.userData.baseTiltX + Math.sin(time * 0.75) * 0.012;
     viewerState.currentModel.rotation.z = viewerState.currentModel.userData.baseTiltZ + Math.sin(time * 0.55) * 0.01;
   }
 
+  if (viewerState.contactShadow) {
+    const pulse = 1 + Math.sin(time * 0.9) * 0.025;
+    viewerState.contactShadow.scale.set(pulse, pulse, 1);
+  }
+
   if (viewerState.fogPlane) {
     viewerState.fogPlane.rotation.z += delta * 0.045;
-    viewerState.fogPlane.material.opacity = 0.045 + Math.sin(performance.now() * 0.0007) * 0.014;
+    viewerState.fogPlane.material.opacity = 0.043 + Math.sin(time * 0.7) * 0.012;
+  }
+
+  viewerState.atmosphereVeils.forEach((veil, index) => {
+    veil.position.x += Math.sin(time * 0.25 + index) * delta * 0.018;
+    veil.material.opacity = 0.04 + Math.sin(time * 0.34 + index * 1.7) * 0.014;
+    veil.lookAt(viewerState.camera.position);
+  });
+
+  if (viewerState.lights?.emberLight) {
+    const baseIntensity = viewerState.lights.emberLight.userData.baseIntensity ?? viewerState.lights.emberLight.intensity;
+    viewerState.lights.emberLight.intensity = baseIntensity + Math.sin(time * 2.2) * 0.035;
   }
 
   if (viewerState.particles) {

@@ -187,7 +187,7 @@
                 <p class="control-label">Exposure</p>
                 <output id="exposureValue" for="exposureSlider">1.00</output>
               </div>
-              <input id="exposureSlider" class="viewer-range" type="range" min="0.7" max="1.25" value="1" step="0.05" aria-label="Adjust renderer exposure" />
+              <input id="exposureSlider" class="viewer-range" type="range" min="0.68" max="1.15" value="0.85" step="0.05" aria-label="Adjust renderer exposure" />
             </div>
 
             <div class="viewer-option-group">
@@ -264,12 +264,17 @@
           <article class="tech-tile reveal">
             <i class="bi bi-badge-3d"></i>
             <h3>Three.js + WebGL</h3>
-            <p>Real-time scene, PerspectiveCamera, WebGLRenderer, fog, shadows, tone mapping, bloom, and selectable lighting rigs.</p>
+            <p>Real-time scene, PerspectiveCamera, WebGLRenderer, ACES tone mapping, cinematic grading, fog, shadows, bloom, and selectable lighting rigs.</p>
           </article>
           <article class="tech-tile reveal">
             <i class="bi bi-box"></i>
             <h3>GLTFLoader</h3>
-            <p>Loads the Blender-exported GLB files dynamically, centers them with bounding boxes, scales them consistently, and applies shadows.</p>
+            <p>Loads Blender-exported GLB files dynamically, centers them with bounding boxes, scales them consistently, and preserves the model workflow.</p>
+          </article>
+          <article class="tech-tile reveal">
+            <i class="bi bi-stars"></i>
+            <h3>HDR Reflections</h3>
+            <p>RGBELoader and PMREMGenerator create environment reflections so metallic blades respond to the lighting like polished game assets.</p>
           </article>
           <article class="tech-tile reveal">
             <i class="bi bi-mouse2"></i>
@@ -284,7 +289,7 @@
           <article class="tech-tile reveal">
             <i class="bi bi-speedometer2"></i>
             <h3>Optimisation</h3>
-            <p>Renderer pixel ratio is capped, previews pause when off-screen, resize handling is efficient, and heavy shaders are avoided.</p>
+            <p>Renderer pixel ratio is capped, particles are lightweight, previews pause when off-screen, and resize handling updates only the required buffers.</p>
           </article>
         </div>
       </div>
@@ -297,7 +302,7 @@
             <p class="section-kicker">About The Project</p>
             <h2>Built Like A Premium Weapon Showcase</h2>
             <p>
-              Blade Archive presents original Blender sword models in a dark fantasy interface inspired by modern game weapon viewers. The project focuses on clear technical evidence: loaded GLB assets, interactive camera controls, lighting choices, material tuning, animation, audio, and responsive layout.
+              Blade Archive presents original Blender sword models in a dark fantasy interface inspired by modern game weapon viewers. The project focuses on clear technical evidence: loaded GLB assets, HDR reflections, interactive camera controls, lighting choices, material tuning, animation, audio, and responsive layout.
             </p>
             <p>
               The implementation stays understandable for coursework assessment: HTML structures the page, CSS controls the cinematic visual language, and JavaScript is separated into model data, rendering setup, UI interactions, audio, and optimisation routines.
@@ -309,7 +314,7 @@
             <div><i class="bi bi-check2-circle"></i> WebGL real-time rendering</div>
             <div><i class="bi bi-check2-circle"></i> GLB model loading</div>
             <div><i class="bi bi-check2-circle"></i> Responsive Bootstrap UI</div>
-            <div><i class="bi bi-check2-circle"></i> Lighting, fog, particles, and bloom</div>
+            <div><i class="bi bi-check2-circle"></i> HDR lighting, fog, particles, and bloom</div>
             <div><i class="bi bi-check2-circle"></i> User-controlled audio</div>
           </div>
         </div>
