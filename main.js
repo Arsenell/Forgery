@@ -604,7 +604,7 @@ function addViewerLighting(scene) {
   bladeKick.position.set(0.8, 0.8, 3.5);
   scene.add(bladeKick);
 
-  const emberLight = new THREE.PointLight(0xd1843e, 0.0, 4.5, 2.2);
+  const emberLight = new THREE.PointLight(0xd1843e, 0.22, 4.5, 2.2);
   emberLight.position.set(-2.45, -1.06, 1.85);
   scene.add(emberLight);
 
@@ -621,11 +621,11 @@ function addViewerLighting(scene) {
 
 function addViewerStage(scene) {
   const floorMaterial = new THREE.MeshPhysicalMaterial({
-    color: 0x030405,
-    metalness: 0.0,
-    roughness: 0.98,
+    color: 0x0a0d0f,
+    metalness: 0.05,
+    roughness: 0.88,
     clearcoat: 0.0,
-    envMapIntensity: 0.0,
+    envMapIntensity: 0.15,
     transparent: true,
     opacity: 0.92
   });
@@ -636,10 +636,10 @@ function addViewerStage(scene) {
   scene.add(floor);
 
   const stoneMaterial = new THREE.MeshStandardMaterial({
-    color: 0x050607,
+    color: 0x101214,
     metalness: 0.0,
-    roughness: 0.98,
-    envMapIntensity: 0.0
+    roughness: 0.96,
+    envMapIntensity: 0.05
   });
   const plinthBase = new THREE.Mesh(new THREE.CylinderGeometry(1.54, 1.78, 0.24, 128), stoneMaterial);
   plinthBase.position.y = -1.66;
@@ -649,7 +649,7 @@ function addViewerStage(scene) {
 
   const plinth = new THREE.Mesh(
     new THREE.CylinderGeometry(1.04, 1.28, 0.32, 128),
-    new THREE.MeshStandardMaterial({ color: 0x080909, metalness: 0.0, roughness: 0.98, envMapIntensity: 0.0 })
+    new THREE.MeshStandardMaterial({ color: 0x141818, metalness: 0.0, roughness: 0.96, envMapIntensity: 0.05 })
   );
   plinth.position.y = -1.43;
   plinth.receiveShadow = true;
@@ -658,7 +658,7 @@ function addViewerStage(scene) {
 
   const plinthTop = new THREE.Mesh(
     new THREE.CylinderGeometry(0.88, 1.02, 0.08, 128),
-    new THREE.MeshStandardMaterial({ color: 0x0c100e, metalness: 0.02, roughness: 0.96, envMapIntensity: 0.0 })
+    new THREE.MeshStandardMaterial({ color: 0x1e2220, metalness: 0.05, roughness: 0.88, envMapIntensity: 0.08 })
   );
   plinthTop.position.y = -1.22;
   plinthTop.receiveShadow = true;
@@ -699,7 +699,7 @@ function addViewerStage(scene) {
   const fogMaterial = new THREE.MeshBasicMaterial({
     color: 0x9fbfc6,
     transparent: true,
-    opacity: 0.0,
+    opacity: 0.022,
     alphaMap: createRadialGradientTexture("fog"),
     depthWrite: false,
     blending: THREE.AdditiveBlending
@@ -739,8 +739,30 @@ function createRadialGradientTexture(type) {
 }
 
 function addAtmosphereVeils(scene) {
-  // Disabled — veils caused brownish arc artifact
-  viewerState.atmosphereVeils = [];
+  const texture = createRadialGradientTexture("fog");
+  const material = new THREE.MeshBasicMaterial({
+    color: 0x7fa5ac,
+    transparent: true,
+    opacity: 0.022,
+    alphaMap: texture,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide
+  });
+
+  const veilPositions = [
+    [-2.6, 0.2, -2.9, 0.12],
+    [2.8, 0.9, -3.6, -0.18],
+    [0.2, -0.5, -4.2, 0.04]
+  ];
+
+  viewerState.atmosphereVeils = veilPositions.map(([x, y, z, rotation]) => {
+    const veil = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8), material.clone());
+    veil.position.set(x, y, z);
+    veil.rotation.y = rotation;
+    scene.add(veil);
+    return veil;
+  });
 }
 
 function createParticleField(scene, count, radius) {
