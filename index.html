@@ -213,6 +213,30 @@
             </div>
 
             <div class="viewer-option-group">
+              <div class="range-label">
+                <p class="control-label">Bloom Glow</p>
+                <output id="bloomValue" for="bloomSlider">0.10</output>
+              </div>
+              <input id="bloomSlider" class="viewer-range" type="range" min="0" max="0.4" value="0.1" step="0.02" aria-label="Adjust bloom glow strength" />
+            </div>
+
+            <div class="viewer-option-group">
+              <div class="range-label">
+                <p class="control-label">Reflections</p>
+                <output id="envValue" for="envSlider">1.10</output>
+              </div>
+              <input id="envSlider" class="viewer-range" type="range" min="0" max="2.0" value="1.1" step="0.1" aria-label="Adjust HDR reflection intensity" />
+            </div>
+
+            <div class="viewer-option-group">
+              <div class="range-label">
+                <p class="control-label">Rim Light</p>
+                <output id="rimValue" for="rimSlider">4.2</output>
+              </div>
+              <input id="rimSlider" class="viewer-range" type="range" min="0" max="8" value="4.2" step="0.2" aria-label="Adjust rim light intensity" />
+            </div>
+
+            <div class="viewer-option-group">
               <p class="control-label">Camera View</p>
               <div class="segmented-control camera-segments" role="group" aria-label="Choose camera view">
                 <button class="segment-button active" type="button" data-camera-view="full">Full</button>

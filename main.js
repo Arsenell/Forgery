@@ -116,6 +116,7 @@ const LIGHT_RIGS = {
     label: "Material",
     exposure: 0.92,
     bloom: 0.1,
+    envIntensity: 1.1,
     ambient: 0.28,
     hemi: 0.65,
     key: 4.5,
@@ -134,6 +135,7 @@ const LIGHT_RIGS = {
     label: "Forge",
     exposure: 0.88,
     bloom: 0.16,
+    envIntensity: 0.9,
     ambient: 0.18,
     hemi: 0.45,
     key: 3.4,
@@ -152,6 +154,7 @@ const LIGHT_RIGS = {
     label: "Studio",
     exposure: 1.0,
     bloom: 0.06,
+    envIntensity: 1.4,
     ambient: 0.34,
     hemi: 0.75,
     key: 3.8,
@@ -1331,6 +1334,27 @@ function initUI() {
     setExposure(Number(event.currentTarget.value));
   });
 
+  document.getElementById("bloomSlider").addEventListener("input", (event) => {
+    const v = Number(event.currentTarget.value);
+    if (viewerState.bloomPass) viewerState.bloomPass.strength = v;
+    const out = document.getElementById("bloomValue");
+    if (out) out.textContent = v.toFixed(2);
+  });
+
+  document.getElementById("envSlider").addEventListener("input", (event) => {
+    const v = Number(event.currentTarget.value);
+    if (viewerState.scene) viewerState.scene.environmentIntensity = v;
+    const out = document.getElementById("envValue");
+    if (out) out.textContent = v.toFixed(1);
+  });
+
+  document.getElementById("rimSlider").addEventListener("input", (event) => {
+    const v = Number(event.currentTarget.value);
+    if (viewerState.lights) viewerState.lights.rimLight.intensity = v;
+    const out = document.getElementById("rimValue");
+    if (out) out.textContent = v.toFixed(1);
+  });
+
   document.querySelectorAll("[data-camera-view]").forEach((button) => {
     button.addEventListener("click", () => {
       setCameraView(button.dataset.cameraView);
@@ -1373,11 +1397,38 @@ function applyLightingRig(id) {
     viewerState.lights.headLight.intensity = rig.head;
   }
 
+  if (viewerState.scene && rig.envIntensity !== undefined) {
+    viewerState.scene.environmentIntensity = rig.envIntensity;
+  }
+
   document.querySelectorAll("[data-lighting-rig]").forEach((button) => {
     button.classList.toggle("active", button.dataset.lightingRig === viewerState.currentLighting);
   });
 
+  syncLightingSliders(rig);
   updateSwordUI(viewerState.currentSword);
+}
+
+function syncLightingSliders(rig) {
+  const bloomSlider = document.getElementById("bloomSlider");
+  const bloomValue  = document.getElementById("bloomValue");
+  const envSlider   = document.getElementById("envSlider");
+  const envValue    = document.getElementById("envValue");
+  const rimSlider   = document.getElementById("rimSlider");
+  const rimValue    = document.getElementById("rimValue");
+
+  if (bloomSlider && rig.bloom !== undefined) {
+    bloomSlider.value = rig.bloom.toFixed(2);
+    if (bloomValue) bloomValue.textContent = rig.bloom.toFixed(2);
+  }
+  if (envSlider && rig.envIntensity !== undefined) {
+    envSlider.value = rig.envIntensity.toFixed(1);
+    if (envValue) envValue.textContent = rig.envIntensity.toFixed(1);
+  }
+  if (rimSlider && rig.rim !== undefined) {
+    rimSlider.value = rig.rim.toFixed(1);
+    if (rimValue) rimValue.textContent = rig.rim.toFixed(1);
+  }
 }
 
 function setExposure(value) {
