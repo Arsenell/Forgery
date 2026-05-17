@@ -868,6 +868,10 @@ function prepareModel(model) {
     child.castShadow = true;
     child.receiveShadow = true;
 
+    // DEBUG: log material names so we can verify keyword matching
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    mats.forEach((m) => console.log('[Material]', JSON.stringify(m?.name), 'metalness:', m?.metalness?.toFixed(2), 'roughness:', m?.roughness?.toFixed(2), 'color:', m?.color?.getHexString()));
+
     if (Array.isArray(child.material)) {
       child.material = child.material.map((material) => enhanceMaterial(material));
     } else {
@@ -939,6 +943,17 @@ function enhanceMaterial(material) {
   }
 
   enhanced.envMapIntensity = profile.envMapIntensity;
+
+  // Safety net: if the material is still very dark AND highly metallic after all profile
+  // overrides it will render black in a dark environment. Force a visible steel base colour.
+  if ("metalness" in enhanced && "color" in enhanced) {
+    const luma = 0.2126 * enhanced.color.r + 0.7152 * enhanced.color.g + 0.0722 * enhanced.color.b;
+    if (enhanced.metalness > 0.55 && luma < 0.07) {
+      enhanced.color.setHex(0x4a4f4e);
+      enhanced.roughness = Math.max(enhanced.roughness, 0.30);
+    }
+  }
+
   enhanced.needsUpdate = true;
   return enhanced;
 }
@@ -979,7 +994,20 @@ function getMetalRoughnessTexture() {
 
 function getMaterialProfile(name) {
   if (!name) {
-    return { color: 0xa49b8d, metalness: 0.78, roughness: 0.38, envMapIntensity: 0.82, specularIntensity: 0.7 };
+    return { color: 0x5c6260, metalness: 0.85, roughness: 0.36, envMapIntensity: 1.2, useRoughnessNoise: true };
+  }
+
+  // Common Blender default material name
+  if (name === "material" || name === "material.001" || name === "material.002") {
+    return { color: 0x5c6260, metalness: 0.85, roughness: 0.36, envMapIntensity: 1.2, useRoughnessNoise: true };
+  }
+
+  if (name.includes("blade") || name.includes("sword") || name.includes("rapier") || name.includes("zweihander")) {
+    return { color: 0x545958, metalness: 0.92, roughness: 0.28, envMapIntensity: 1.45, clearcoat: 0.1, clearcoatRoughness: 0.22, specularIntensity: 0.9, ior: 1.55, useRoughnessNoise: true };
+  }
+
+  if (name.includes("steel") && !name.includes("dark")) {
+    return { color: 0x6e7472, metalness: 0.95, roughness: 0.22, envMapIntensity: 1.5, clearcoat: 0.12, clearcoatRoughness: 0.2, specularIntensity: 0.92, ior: 1.56, useRoughnessNoise: true };
   }
 
   if (name.includes("dark steel")) {
@@ -1022,7 +1050,8 @@ function getMaterialProfile(name) {
     return { color: 0x262626, metalness: 0.0, roughness: 0.76, envMapIntensity: 0.24 };
   }
 
-  return { color: null, envMapIntensity: 0.95 };
+  // Unknown material — default to a visible steel so nothing renders black
+  return { color: 0x5c6260, metalness: 0.85, roughness: 0.36, envMapIntensity: 1.2, useRoughnessNoise: true };
 }
 
 function normalizeModel(model, targetSize) {
