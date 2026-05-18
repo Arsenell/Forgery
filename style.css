@@ -399,6 +399,11 @@ a {
   background: rgba(160, 80, 255, 0.12);
 }
 
+.rarity-uncommon {
+  color: #a8e6b0;
+  background: rgba(80, 180, 100, 0.12);
+}
+
 .btn-card-action {
   width: 100%;
   color: var(--silver);

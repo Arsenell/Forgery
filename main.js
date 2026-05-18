@@ -108,6 +108,20 @@ const SWORDS = [
     targetSize: 3.6,
     previewSize: 3.2,
     fullViewDistance: 9.5
+  },
+  {
+    id: "sword5",
+    name: "Halberd",
+    shortName: "Halberd",
+    model: "./models/sword5.glb",
+    rarity: "Uncommon",
+    lore: "A pole-mounted axe-blade forged for infantry ranks — brutal reach, fearsome silhouette, and a crescent edge that catches light like a crescent moon.",
+    origin: "Northern war camps",
+    material: "Battle-worn iron",
+    camera: [3.8, 1.6, 9.0],
+    targetSize: 3.8,
+    previewSize: 3.4,
+    fullViewDistance: 11.0
   }
 ];
 
