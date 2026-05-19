@@ -276,12 +276,12 @@ class BladeAudio {
     this.context = null;
     this.enabled = false;
     this.muted = true;
-    this.ambientElement = new Audio("./audio/ambient.mp3");
+    this.ambientElement = new Audio("./audio/ambient.m4a");
     this.ambientElement.loop = true;
     this.ambientElement.volume = 0.16;
-    this.hoverElement = new Audio("./audio/hover.mp3");
+    this.hoverElement = new Audio("./audio/hover.wav");
     this.hoverElement.volume = 0.2;
-    this.unsheathElement = new Audio("./audio/sword-unsheath.mp3");
+    this.unsheathElement = new Audio("./audio/sword-unsheathe.wav");
     this.unsheathElement.volume = 0.32;
     this.syntheticAmbient = null;
     this.useSyntheticHover = false;
