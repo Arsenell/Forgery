@@ -279,12 +279,24 @@ a {
 }
 
 .collection-section,
+.process-section,
 .technology-section,
 .about-section {
   padding: 6rem 0;
   background:
     linear-gradient(180deg, rgba(11, 13, 16, 0.95), rgba(5, 6, 7, 0.98)),
     radial-gradient(circle at 18% 12%, rgba(136, 184, 196, 0.08), transparent 28rem);
+}
+
+.process-video-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+.process-video-wrap iframe {
+  display: block;
 }
 
 .section-heading {
