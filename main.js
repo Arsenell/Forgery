@@ -142,13 +142,13 @@ const SWORDS = [
 const LIGHT_RIGS = {
   material: {
     label: "Material",
-    exposure: 0.92,
+    exposure: 1.02,
     bloom: 0.1,
-    envIntensity: 1.1,
-    ambient: 0.28,
-    hemi: 0.65,
+    envIntensity: 1.35,
+    ambient: 0.42,
+    hemi: 0.72,
     key: 4.5,
-    fill: 1.1,
+    fill: 1.6,
     rim: 4.2,
     ember: 0.85,
     head: 0.28,
@@ -1276,13 +1276,23 @@ function initCollectionPreviews() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
 
-    scene.add(new THREE.AmbientLight(0xdfe8e8, 0.26));
-    const key = new THREE.DirectionalLight(0xf2eee4, 1.15);
+    // RoomEnvironment gives metallic blades something to reflect — without this
+    // fully-metallic materials appear near-black in the preview cards.
+    const previewPmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = previewPmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = 1.5;
+    previewPmrem.dispose();
+
+    scene.add(new THREE.AmbientLight(0xdfe8e8, 0.55));
+    const key = new THREE.DirectionalLight(0xf2eee4, 2.8);
     key.position.set(2.3, 3.5, 4.2);
-    const rim = new THREE.DirectionalLight(0x88b8c4, 0.85);
+    const fill = new THREE.DirectionalLight(0x8ab8c8, 1.4);
+    fill.position.set(-1.5, 0.6, 3.2);
+    const rim = new THREE.DirectionalLight(0x88b8c4, 2.0);
     rim.position.set(-2.5, 1, -2.5);
-    scene.add(key, rim);
+    scene.add(key, fill, rim);
 
     const preview = { canvas, scene, camera, renderer, model: null, active: false };
     previewScenes.push(preview);
