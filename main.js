@@ -122,6 +122,20 @@ const SWORDS = [
     targetSize: 3.8,
     previewSize: 3.4,
     fullViewDistance: 11.0
+  },
+  {
+    id: "sword6",
+    name: "Lance",
+    shortName: "Lance",
+    model: "./models/sword6.glb",
+    rarity: "Rare",
+    lore: "A cavalry lance forged for the charge — its tapered tip and long shaft carry the full weight of momentum into every strike.",
+    origin: "Mounted order",
+    material: "Tempered steel",
+    camera: [3.8, 1.6, 11.0],
+    targetSize: 4.0,
+    previewSize: 3.6,
+    fullViewDistance: 13.0
   }
 ];
 
