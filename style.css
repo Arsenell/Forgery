@@ -922,6 +922,142 @@ a {
   }
 }
 
+.about-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 3.5rem 0;
+}
+
+.about-sub-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0 0 1.75rem;
+  color: var(--silver);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  font-weight: normal;
+}
+
+.about-sub-heading span {
+  color: var(--ember);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.about-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin-top: 3rem;
+}
+
+.about-panel {
+  padding: 1.75rem;
+  border: 1px solid var(--line);
+  background: rgba(238, 242, 243, 0.03);
+}
+
+.about-panel h3 {
+  margin: 0 0 1.1rem;
+  color: var(--silver);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.12rem;
+  font-weight: normal;
+}
+
+.about-check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.about-check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  color: rgba(238, 242, 243, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.about-check-list li i {
+  flex-shrink: 0;
+  margin-top: 0.18rem;
+  color: var(--frost);
+}
+
+.about-test-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.about-test-table th {
+  padding: 0 0 0.45rem;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.about-test-table td {
+  padding: 0.42rem 0;
+  border-bottom: 1px solid rgba(238, 242, 243, 0.05);
+  color: rgba(238, 242, 243, 0.7);
+  vertical-align: middle;
+}
+
+.about-test-table td:last-child {
+  text-align: right;
+  color: var(--frost);
+  font-size: 1rem;
+}
+
+.about-production-steps {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.7rem;
+  counter-reset: step;
+}
+
+.about-production-steps li {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  color: rgba(238, 242, 243, 0.7);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  counter-increment: step;
+}
+
+.about-production-steps li::before {
+  content: counter(step, decimal-leading-zero);
+  flex-shrink: 0;
+  min-width: 2rem;
+  color: var(--ember);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-top: 0.22rem;
+}
+
+@media (max-width: 767.98px) {
+  .about-two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
