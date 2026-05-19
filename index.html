@@ -472,7 +472,7 @@
         <div class="about-layout reveal">
           <div>
             <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin-top:0;">
-              All six weapons were modelled from scratch in Blender 4.x. The workflow prioritised clean, efficient geometry: models use loop-cut subdivision only where edge detail is needed, mirror modifiers handle bilateral symmetry, and hard-surface bevels on blade edges prevent specular pinching under point lights. Materials were set in Blender using the Principled BSDF shader with <code>metallic&nbsp;=&nbsp;1.0</code> and roughness tuned per weapon (a rapier is near-mirror at 0.08; a halberd is battle-worn at 0.38). All models were exported as GLB with embedded materials but no baked textures — the PBR material response under the HDR environment achieves the final look entirely in Three.js.
+              All six weapons were modelled from scratch in Blender 4.0. The workflow prioritised clean, efficient geometry: models use loop-cut subdivision only where edge detail is needed, mirror modifiers handle bilateral symmetry, and hard-surface bevels on blade edges prevent specular pinching under point lights. Materials were set in Blender using the Principled BSDF shader with <code>metallic&nbsp;=&nbsp;1.0</code> and roughness tuned per weapon (a rapier is near-mirror at 0.08; a halberd is battle-worn at 0.38). All models were exported as GLB with embedded materials but no baked textures — the PBR material response under the HDR environment achieves the final look entirely in Three.js.
             </p>
             <p style="color:rgba(238,242,243,0.7);line-height:1.7;">
               After loading, Three.js centers each model using its bounding box and scales it to a per-sword <code>targetSize</code> constant, so every weapon fills the viewport consistently regardless of the raw Blender units. The Blender timelapse in the <a href="#process" style="color:var(--frost);">Making Of</a> section shows the full modelling and material workflow for the Lance.
@@ -484,7 +484,7 @@
               <li>Blockout silhouette with cylinders and cubes, checking proportions from the front and side orthographic views</li>
               <li>Add loop cuts for blade taper, crossguard shape, and grip wrapping — no tri-fans, quads throughout</li>
               <li>Apply mirror modifier along the X axis for blade geometry; remove before export to keep GLB clean</li>
-              <li>Bevel hard edges (1–2 segments, 0.02–0.06 px) to catch specular highlights without adding dense geometry</li>
+              <li>Bevel hard edges (2–5 segments, 0.02–0.06 px) to catch specular highlights without adding dense geometry</li>
               <li>Assign Principled BSDF materials: metallic 1.0, roughness per weapon, IOR 1.45 for pommel gems</li>
               <li>Export as GLB (Geometry + Materials, no animations, Y-up) and verify in the Three.js viewer</li>
             </ol>
@@ -552,6 +552,113 @@
           </div>
 
         </div>
+
+        <!-- ── Rubric Checklist ───────────────────────────────── -->
+        <div class="about-divider" aria-hidden="true"></div>
+        <h3 class="about-sub-heading reveal">
+          <span>04</span> Rubric Checklist
+        </h3>
+        <div class="reveal" style="overflow-x:auto;">
+          <table class="about-test-table" style="width:100%;table-layout:fixed;">
+            <thead>
+              <tr>
+                <th style="width:22%;">Criterion</th>
+                <th style="width:22%;">Elements</th>
+                <th style="width:46%;">Evidence in Blade Archive</th>
+                <th style="width:10%;text-align:center;">✓</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td rowspan="4"><strong>3D Model</strong><br><small style="color:var(--muted);">20 marks</small></td><td>Geometry</td><td>Six weapons modelled from scratch in Blender 4.0 — quads throughout, loop-cut subdivision, mirror modifier, hard-surface bevels on all blade edges</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Lighting</td><td>Three switchable rigs (Material / Forge / Studio) each with ambient, hemisphere, key, fill, rim, blade-front, edge, and ember lights; rim intensity slider</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Cameras</td><td>Four lerp-animated presets (Full / Blade / Hilt / Profile) with per-sword positions; OrbitControls with damping; smooth reset</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Textures</td><td>Sketchfab PBR material packs (damascus steel, crystal, leather, neon, decorative gem inlays) baked into each GLB; <code>enhanceMaterial()</code> detects and preserves embedded maps</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+
+              <tr><td rowspan="4"><strong>Design</strong><br><small style="color:var(--muted);">15 marks</small></td><td>Usability</td><td>Labelled controls, segmented button groups, four camera shortcuts, and a loading overlay with progress text reduce friction for first-time users</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Responsive</td><td>Bootstrap 5 grid collapses from 3-column gallery → 2-column → 1-column; viewer sidebar stacks below canvas on mobile; navbar collapses to burger</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Look and feel</td><td>Dark charcoal / silver / ember palette; Georgia serif headings; custom CSS animations (ember particles, fog, reveal fade-up); cinematic GLSL grade post-process</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Accessibility</td><td><code>aria-label</code> / <code>aria-pressed</code> on all controls; <code>prefers-reduced-motion</code> respected; 15:1 contrast ratio; semantic landmarks; canvas described for screen readers</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+
+              <tr><td rowspan="6"><strong>Integration</strong><br><small style="color:var(--muted);">10 marks</small></td><td>3D models</td><td>Six GLB files loaded via <code>GLTFLoader</code>; centred with bounding-box and scaled to per-sword <code>targetSize</code></td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Video</td><td>YouTube timelapse embed in the Making Of section documenting the full Blender workflow for the Ironspire Lance</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Audio</td><td>Ambient M4A loop, hover WAV, unsheath WAV — all lazy-loaded on first user gesture; Web Audio API synthesiser fallback if files fail</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Images</td><td>Bootstrap Icons throughout UI; HDR environment map loaded via <code>RGBELoader</code> for image-based reflections</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Text</td><td>Per-sword lore, origin, and material stats update dynamically in the viewer sidebar on model swap</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Animations</td><td>Auto-rotate, hero canvas particle embers, fog overlay, scroll-triggered reveal fade-ups, camera lerp transitions between presets</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+
+              <tr><td rowspan="3"><strong>Interaction</strong><br><small style="color:var(--muted);">10 marks</small></td><td>Manipulate 3D models</td><td>OrbitControls (drag / scroll / right-click pan); auto-rotate toggle; wireframe toggle; fullscreen button</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>View 3D models</td><td>Six model-switcher buttons + collection card buttons; exposure, bloom, reflections, and rim sliders update live</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Interactivities on all pages</td><td>Hero section is a live WebGL canvas; collection cards each host an independent preview scene; viewer is fully interactive; all nav anchors work</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+
+              <tr><td rowspan="4"><strong>Implementation</strong><br><small style="color:var(--muted);">15 marks</small></td><td>Testing strategy</td><td>Functional testing (feature checklist above), cross-browser testing (Chrome / Firefox / Safari / Edge), responsiveness testing (1440 / 768 / 375 px), cognitive walkthrough with peer feedback</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Technology used</td><td>Three.js r164, Bootstrap 5.3.3, Bootstrap Icons 1.11.3, Web Audio API, RGBELoader, EffectComposer, UnrealBloomPass, OrbitControls</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Rationality of technology</td><td>Three.js chosen for PBR WebGL rendering with minimal boilerplate; Bootstrap for fast responsive layout without custom breakpoint code; GLB for single-file PBR models with embedded textures</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Evidence of testing</td><td>Tables above (browser compat, breakpoints, feature checklist); Chrome DevTools used to verify console errors and frame rate; self-reflection section below documents observed issues</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+
+              <tr><td rowspan="4"><strong>Deeper Understanding</strong><br><small style="color:var(--muted);">20 marks</small></td><td>Custom GLSL shader</td><td><code>CinematicGradeShader</code> — vertex + fragment shader with contrast, saturation, vignette, and tint uniforms injected into the EffectComposer pipeline</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Post-processing pipeline</td><td><code>EffectComposer</code> → <code>RenderPass</code> → <code>UnrealBloomPass</code> → <code>ShaderPass(CinematicGrade)</code> → <code>OutputPass</code></td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Blender (beyond lab scope)</td><td>Six original weapons modelled in Blender 4.0 with Sketchfab PBR materials; timelapse evidence published on YouTube</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Web Audio API synthesis</td><td><code>BladeAudio</code> class generates procedural ambient oscillators (sawtooth + sine), hover tones, and unsheath noise synthesis — no dependency on audio files loading</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+
+              <tr><td rowspan="2"><strong>Implementation &amp; Publication</strong><br><small style="color:var(--muted);">10 marks</small></td><td>About page</td><td>This page — covering design rationale, 3D model production, accessibility, testing, rubric alignment, and self-reflection</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+              <tr><td>Publishing</td><td>Deployed to GitHub Pages at <a href="https://arsenell.github.io/Forgery/" style="color:var(--frost);" target="_blank" rel="noopener">arsenell.github.io/Forgery</a> — loads and runs without errors</td><td style="text-align:center;"><i class="bi bi-check-circle-fill" style="color:#4caf86;"></i></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ── Self-Reflection ────────────────────────────────── -->
+        <div class="about-divider" aria-hidden="true"></div>
+        <h3 class="about-sub-heading reveal">
+          <span>05</span> Self-Reflection
+        </h3>
+        <div class="about-two-col reveal">
+
+          <div class="about-panel">
+            <h3 style="font-size:1rem;margin-bottom:1rem;color:var(--frost);"><i class="bi bi-stars" style="margin-right:0.5rem;"></i>Why I Made Blade Archive</h3>
+            <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin:0 0 1rem;">
+              Blade Archive was conceived as a showcase of weapons commonly found in video games and fantasy settings, with the two strongest inspirations being <em>Monster Hunter Wilds</em> and <em>Final Fantasy XIV</em>.
+            </p>
+            <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin:0 0 1rem;">
+              The Greatsword and the Lance are the most directly referenced. Both draw from the Gore Magala equipment set — the Greatsword's silhouette and colour palette mirror the Dark Knight Greatsword that appears in both games, while the Lance follows a similar design language. Translating those iconic shapes into original Blender geometry was the core creative challenge of the project.
+            </p>
+
+            <h3 style="font-size:1rem;margin-bottom:1rem;color:var(--frost);margin-top:1.5rem;"><i class="bi bi-check2-all" style="margin-right:0.5rem;"></i>What Worked Well</h3>
+            <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin:0 0 1rem;">
+              The Greatsword is the strongest model on the site. Its broad fuller and distinctive silhouette catch the rim lighting well, and the material palette reads clearly at every camera distance. The Zweihander is a close second — it is the most geometrically complex weapon, yet its perfect bilateral symmetry gives it an immediately readable profile in the viewer.
+            </p>
+            <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin:0;">
+              Beyond the models, I am satisfied with the overall site design. The dark forge aesthetic, the ember particle system, and the ambient audio together convey the feel of a blacksmith's workshop, which was the intended atmosphere from the outset.
+            </p>
+          </div>
+
+          <div class="about-panel">
+            <h3 style="font-size:1rem;margin-bottom:1rem;color:var(--frost);"><i class="bi bi-exclamation-triangle" style="margin-right:0.5rem;"></i>What I Would Improve</h3>
+            <ul class="about-check-list" style="list-style:none;padding:0;">
+              <li style="padding:0.5rem 0;border-bottom:1px solid rgba(238,242,243,0.07);">
+                <strong style="color:rgba(238,242,243,0.9);">Rapier visibility</strong>
+                <p style="color:rgba(238,242,243,0.6);font-size:0.88rem;margin:0.25rem 0 0;">The Rapier's diamond-cut material was designed to look regal, but its high transparency makes it almost invisible under the current HDR lighting. In a future version I would either choose a more opaque material or switch to a dedicated environment map tuned for refractive surfaces.</p>
+              </li>
+              <li style="padding:0.5rem 0;border-bottom:1px solid rgba(238,242,243,0.07);">
+                <strong style="color:rgba(238,242,243,0.9);">Lance geometry</strong>
+                <p style="color:rgba(238,242,243,0.6);font-size:0.88rem;margin:0.25rem 0 0;">The shaft is too angular — blocking it out from a cylinder rather than a cube from the start would have produced a rounder, more lance-like profile consistent with the <em>Monster Hunter</em> and <em>Brawlhalla</em> references I used.</p>
+              </li>
+              <li style="padding:0.5rem 0;">
+                <strong style="color:rgba(238,242,243,0.9);">Halberd smoothing</strong>
+                <p style="color:rgba(238,242,243,0.6);font-size:0.88rem;margin:0.25rem 0 0;">The axe blade was over-subdivided during modelling, which caused the Smooth modifier to soften the edge rather than sharpen it. Bevelling the edge loops instead of applying a blanket smooth would preserve the crisp cutting-edge profile without risking geometry breakage.</p>
+              </li>
+            </ul>
+
+            <h3 style="font-size:1rem;margin-bottom:1rem;color:var(--frost);margin-top:1.5rem;"><i class="bi bi-arrow-right-circle" style="margin-right:0.5rem;"></i>Future Plans</h3>
+            <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin:0 0 1rem;">
+              The collection would benefit from a curved blade — a dagger or scimitar — but their short length makes them harder to present in the current viewer scale. A per-weapon camera distance adjustment or a dedicated close-up preset would solve this.
+            </p>
+            <p style="color:rgba(238,242,243,0.7);line-height:1.7;margin:0;">
+              I would also consider adding a light-mode toggle for accessibility. Some users may find the dark interface harder to read, and a high-contrast light theme could also improve visibility of the smaller, more delicate models such as the Rapier.
+            </p>
+          </div>
+
+        </div>
+
       </div>
     </section>
   </main>
