@@ -27,20 +27,5 @@ Blade Archive is a cinematic fantasy sword showcase website for a university 3D 
 - Ambient/interaction audio system with procedural fallbacks
 - Collection cards with 3D previews
 
-## Running Locally
-
-Use a local web server so the GLB models load correctly:
-
-```bash
-python -m http.server 5173
-```
-
-Then open:
-
-```text
-http://127.0.0.1:5173
-```
-
 ## Coursework Notes
-
-The project demonstrates WebGL rendering, model loading, camera control, lighting control, 3D content swapping, UI interaction, responsive design, and media integration.
+This work is available online via GitHub Pages: https://arsenell.github.io/Forgery/
