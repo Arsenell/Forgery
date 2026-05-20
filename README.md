@@ -1,7 +1,5 @@
 # Blade Archive
 
-Blade Archive is a cinematic fantasy sword showcase website for a university 3D interactive web application coursework project.
-
 ## Technologies
 
 - HTML5
@@ -26,6 +24,7 @@ Blade Archive is a cinematic fantasy sword showcase website for a university 3D 
 - Wireframe toggle
 - Ambient/interaction audio system with procedural fallbacks
 - Collection cards with 3D previews
+- Integrated Youtube video to showcase timelapse
 
 ## Coursework Notes
 This work is available online via GitHub Pages: https://arsenell.github.io/Forgery/
