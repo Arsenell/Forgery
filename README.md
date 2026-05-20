@@ -26,5 +26,3 @@
 - Collection cards with 3D previews
 - Integrated Youtube video to showcase timelapse
 
-## Coursework Notes
-This work is available online via GitHub Pages: https://arsenell.github.io/Forgery/
